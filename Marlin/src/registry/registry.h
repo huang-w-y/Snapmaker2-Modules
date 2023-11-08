@@ -54,6 +54,7 @@ class Registry {
   void LoadCfg();
   void SaveCfg();
  public:
+  // APP 参数
   AppParmInfo cfg_;
  private:
   void ReadMacInfo(ModuleMacInfo * mac);
@@ -70,13 +71,20 @@ class Registry {
   void Heartbeat();
   uint32_t MsgId2FuncId(uint32_t msgId);
  private:
+  // 模组 can ID
   uint32_t module_can_id_;  // moudleId + random number
+  // 模组ID
   uint32_t module_id_;
+  // 随机 ID，也是SN
   uint32_t randome_id_;
+  // 更新最近一次接收到数据的时间
   uint32_t last_recv_time_ = 0;
+  // 标记模组是否已配置过
   bool     is_configured = false;
+  // Func_ID
   uint16_t func_ids_[FUNC_MAX_LEN];
   uint16_t len_ = 0;
+  // MsgID
   uint16_t msg_ids_[FUNC_MAX_LEN];
   uint32_t timeout_ms_ = 2000;
 };

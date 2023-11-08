@@ -29,10 +29,15 @@ void Engine::Run() {
   bool loop_flag = true;
 
   while (loop_flag) {
+    // 检测并发送CAN总线数据
     canbus_g.Handler();
+    // 检测并处理CAN总线接收到的模组配置消息
     registryInstance.ConfigHandler();
+    // 接收处理标准数据帧，执行功能
     registryInstance.ServerHandler();
+    // 接收处理系统配置命令
     registryInstance.SystemHandler();
+    // 执行模组例行程序
     routeInstance.ModuleLoop();
   }
 }

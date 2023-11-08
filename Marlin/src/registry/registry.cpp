@@ -32,51 +32,66 @@
 #include "src/utils/str.h"
 #include <wirish_time.h>
 
+// 心跳包
+// 更新心跳时间
 void Registry::Heartbeat() {
   last_recv_time_ = millis();
 }
 
+// 处理配置消息
 void Registry::ConfigHandler() {
+  // 如果扩展远程帧接收缓冲区不为空
   while (!canbus_g.remote_extended_recv_buffer_.isEmpty()) {
     uint32_t id = canbus_g.remote_extended_recv_buffer_.remove();
     switch (id) {
       case 0x1:
         // report module Id
+        // 上报模组 ID
         canbus_g.remote_send_buffer_.insert(canbus_g.extend_send_id_);
     }
   }
+  // 如果标准远程帧接收缓冲区不为空
   while (!canbus_g.remote_standard_recv_buffer_.isEmpty()) {
     uint32_t id = canbus_g.remote_standard_recv_buffer_.remove();
     switch (id) {
+      // 心跳包
       case REMOTE_STD_HEARTBEAT:
         if (!is_configured) {
+          // 暂未支持动态拔插
           // TODO: The current master control is not supported
           // canbus_g.remote_send_buffer_.insert(canbus_g.extend_send_id_);
         }
         break;
+      // 急停操作
       case REMOTE_STD_EM_STOP:
         routeInstance.module_->EmergencyStop();
         break;
     }
+    // 更新心跳时间
     Heartbeat();
   }
 }
 
+// 设置连接超时时间
 void Registry::SetConnectTimeout(uint32_t timeout) {
   timeout_ms_ = timeout;
 }
 
+// 检测设备是否正常连接
 bool Registry::IsConnect() {
   return is_configured && ((last_recv_time_ + timeout_ms_) > millis());
 }
 
+// 接收处理标准数据帧，执行功能
 // Receive and parse standard frame, execute function invocation
 void Registry::ServerHandler() {
   while (!canbus_g.standard_recv_buffer_.isEmpty()) {
     CanRxStruct txItem = canbus_g.standard_recv_buffer_.remove();
     txItem.std_id &= 0x1ff;  // msgID is 9 bit
     // Convert msgId to funcId
+    // 根据MsgID 找到功能ID
     uint32_t funcId = MsgId2FuncId(txItem.std_id);
+    // 执行功能
     contextInstance.funcid_ = funcId;
     contextInstance.msgid_ = txItem.std_id;
     contextInstance.data_ = txItem.data;
@@ -85,13 +100,17 @@ void Registry::ServerHandler() {
   }
 }
 
+// 设置随机ID
 void Registry::set_random_id(uint32_t randomId) {
 
 }
+
+// 获取模组 ID
 MODULE_TYPE Registry::module() {
   return (MODULE_TYPE) module_id_;
 }
 
+// 接收处理系统配置命令
 void Registry::SystemHandler() {
 
   // Receive and parse long data, update msgId mapping
@@ -101,6 +120,7 @@ void Registry::SystemHandler() {
   uint8_t cmd = longpackInstance.cmd[0];
   uint8_t * cmdData = longpackInstance.cmd + 1;
 
+  // 解析系统配置命令，执行具体配置功能
   switch (cmd) {
     case CMD_M_CONFIG :
       ReportModuleIndex(cmdData);
@@ -141,11 +161,13 @@ void Registry::SystemHandler() {
   longpackInstance.cmd_clean();
 }
 
+// 设置模组ID
 void Registry::set_module_id(uint16_t moduleId) {
   this->module_id_ = moduleId;
   InitlizeFuncIds();
 }
 
+// 上报 FuncID 列表
 void Registry::ReportFunctionIds() {
   uint16_t * funcIds = this->func_ids_;
   uint16_t count = this->len_;
@@ -160,6 +182,7 @@ void Registry::ReportFunctionIds() {
   longpackInstance.sendLongpack(cache, index);
 }
 
+// 发送升级请求应答ACK
 void Registry::SendUpdateRequest() {
   uint8_t  data[2];
   data[0] = CMD_S_UPDATE_REQUEST_REACK;
@@ -168,6 +191,7 @@ void Registry::SendUpdateRequest() {
   longpackInstance.sendLongpack(data, 2);
 }
 
+// 执行模组系统升级
 void Registry::SysUpdate(uint8_t *versions) {
     uint8_t data_len = 0;
     AppParmInfo * app_parm = &registryInstance.cfg_;
@@ -176,12 +200,17 @@ void Registry::SysUpdate(uint8_t *versions) {
     memset(app_parm->versions, 0, sizeof(app_parm->versions));
     data_len = (strlen((char *)versions) > APP_VARSIONS_SIZE) ?
                  (APP_VARSIONS_SIZE - 1) : strlen((char *)versions);
+    // 更新升级固件版本号
     memcpy(app_parm->versions, versions, data_len);
+    // 保存APP配置参数
     registryInstance.SaveCfg();
+    // 发送应答ACK
     SendUpdateRequest();
+    // 重启后，bootloader 会接收升级包
     HAL_reset();
 }
 
+// 解析版本号
 bool VerisionToNumber(uint8_t *version, uint8_t *ver_num, uint8_t ver_num_count) {
   uint8_t *p = version;
   if (!version)
@@ -213,6 +242,7 @@ bool VerisionToNumber(uint8_t *version, uint8_t *ver_num, uint8_t ver_num_count)
   return true;
 }
 
+// 接收到主控的升级请求后，检测是否可以升级
 void Registry::IsUpdate(uint8_t * data) {
   uint8_t  send_data[2] = {CMD_S_UPDATE_REQUEST_REACK, 0};
   uint8_t  cmd = data[0];
@@ -223,6 +253,7 @@ void Registry::IsUpdate(uint8_t * data) {
       SysUpdate(versions);
       return;
   } else if (strcmp((char *)versions, (char *)app_parm->versions) != 0) {
+      // 迭代版本大于当前版本，才允许升级
       uint8_t ver_num[3];
       if (VerisionToNumber(versions, ver_num, 3)) {
         if (routeInstance.VersionComparison(ver_num[0], ver_num[1], ver_num[2])) {
@@ -235,6 +266,7 @@ void Registry::IsUpdate(uint8_t * data) {
 }
 
 // used debug
+// 上报 FuncID & MsgID 映射关系
 void Registry::ReportFuncidAndMsgid() {
     uint16_t index = 0, i;
     uint8_t cache[50];
@@ -251,6 +283,7 @@ void Registry::ReportFuncidAndMsgid() {
     longpackInstance.sendLongpack(cache, index);
 }
 
+// 上报版本号
 void Registry::ReportVersions(uint8_t * data) {
   uint8_t versions[32];
   uint8_t index = 0;
@@ -271,6 +304,7 @@ void Registry::ReportVersions(uint8_t * data) {
   longpackInstance.sendLongpack(versions, index);
 }
 
+// 注册(绑定) MsgID
 void Registry::RegisterMsgId(uint8_t * data) {
   uint8_t count = data[0];
   uint16_t msgid, funcid, index = 1;
@@ -316,6 +350,7 @@ void Registry::ReportModuleIndex(uint8_t * data) {
   longpackInstance.sendLongpack(cache, index);
 }
 
+// 初始化 FuncID
 void Registry::InitlizeFuncIds() {
   len_ = routeInstance.func_count_;
   for (int i = 0; i < len_; ++i) {
@@ -323,6 +358,7 @@ void Registry::InitlizeFuncIds() {
   }
 }
 
+// 根据 MsgID 查找 FuncID
 uint32_t Registry::MsgId2FuncId(uint32_t msgId) {
   for (int i = 0; i < len_; ++i) {
     if (msg_ids_[i] == msgId) {
@@ -332,6 +368,7 @@ uint32_t Registry::MsgId2FuncId(uint32_t msgId) {
   return INVALID_VALUE;
 }
 
+// 根据 FuncID 查找 MsgID
 uint16_t Registry::FuncId2MsgId(uint16_t funcid) {
   for (int i = 0; i < this->len_; ++i) {
     if (this->func_ids_[i] == funcid) {
@@ -340,16 +377,22 @@ uint16_t Registry::FuncId2MsgId(uint16_t funcid) {
   }
   return INVALID_VALUE;
 }
+
+// 模组信息初始化
 void Registry::ModuleInfoInit() {
   ModuleMacInfo * mac = (ModuleMacInfo *)FLASH_MODULE_PARA;
   module_id_ = Number36To10(mac->moduleId, sizeof(mac->moduleId));
   randome_id_ = mac->u32random;
 }
+
+// 模组CANID
 uint32_t Registry::ModuleCanId() {
   uint32_t module_id = ((module_id_ & 0x1ff) << 19) | (randome_id_ & 0x7ffff);
+  // 最后一位是主从位：1代表从机
   return (1) | (module_id << 1);
 }
 
+// 使能 APP
 void Registry::EnableAPP() {
   uint8_t  enter_app_flag[2];
   HAL_flash_read(FLASH_PUBLIC_PARA, enter_app_flag, sizeof(enter_app_flag));
@@ -361,10 +404,12 @@ void Registry::EnableAPP() {
   }
 }
 
+// 获取 APP 参数
 void Registry::LoadCfg() {
   HAL_flash_read(FLASH_APP_PARA, (uint8_t*)&cfg_, sizeof(cfg_));
 }
 
+// 保存 APP 参数
 void Registry::SaveCfg() {
   cfg_.parm_mark[0] = 0xaa;
   cfg_.parm_mark[1] = 0x55;
@@ -372,6 +417,7 @@ void Registry::SaveCfg() {
   HAL_flash_write(FLASH_APP_PARA, (uint8_t *)&cfg_, sizeof(cfg_));
 }
 
+// 初始化
 void Registry::Init() {
   this->EnableAPP();
   this->ModuleInfoInit();
@@ -383,20 +429,25 @@ void Registry::Init() {
   }
 }
 
+// 更新模组ID
+// 其实是个调试接口
 void Registry::RenewMoudleID() {
   this->ModuleInfoInit();
   canbus_g.SetNewExternedID(this->ModuleCanId());
 }
 
+// 获取 MAC 信息
 void Registry::ReadMacInfo(ModuleMacInfo * mac) {
   HAL_flash_read(FLASH_MODULE_PARA, (uint8_t *)mac ,sizeof(ModuleMacInfo));
 }
 
+// 写入 MAC 信息
 void Registry::WriteMacInfo(ModuleMacInfo  *mac) {
   HAL_flash_erase_page(FLASH_MODULE_PARA, 1);
   HAL_flash_write(FLASH_MODULE_PARA, (uint8_t *)mac, sizeof(ModuleMacInfo));
 }
 
+// 上报 MAC 信息
 void Registry::ReportMacInfo(uint8_t type, uint8_t cmd) {
     ModuleMacInfo * mac = MODULE_MAC_INFO_ADDR;
     uint8_t   data[8];
@@ -430,6 +481,7 @@ void Registry::ReportMacInfo(uint8_t type, uint8_t cmd) {
 
 }
 
+// 设置 MAC 里的随机ID
 void Registry::SetMacRandom(uint8_t *data) {
     ModuleMacInfo  mac;
     if (data[0] == 0) {

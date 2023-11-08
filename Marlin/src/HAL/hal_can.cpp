@@ -240,6 +240,7 @@ bool CAN_GetSendStat() {
     return false;
 }
 
+// 尝试发送扩展远程帧
 void HAL_CAN_try_send_remote() {
   if (!CAN_GetSendStat()) {
     return ;
@@ -256,6 +257,7 @@ void HAL_CAN_try_send_remote() {
   }
 }
 
+// 尝试发送标准数据帧
 void HAL_CAN_try_send_standard() {
   if (!CAN_GetSendStat()) {
     return ;
@@ -274,6 +276,7 @@ void HAL_CAN_try_send_standard() {
   }
 }
 
+// 尝试发送扩展数据帧
 void HAL_CAN_try_send_extended() {
   uint8_t  len = 0;
   if (!CAN_GetSendStat()) {
@@ -296,6 +299,8 @@ void HAL_CAN_try_send_extended() {
     canbus_g.RenewExternedID();
   }
 }
+
+// CAN 总线尝试发送数据
 void HAL_CAN_try_send() {
   HAL_CAN_try_send_remote();
   HAL_CAN_try_send_standard();
@@ -308,8 +313,10 @@ extern "C" {
     CAN_Receive(CAN1, CAN_FIFO0, &rxMessage);
 
     if (rxMessage.RTR == CAN_RTR_REMOTE) {
+      // 扩展远程帧
       canbus_g.PushRecvRemoteData(rxMessage.ExtId, rxMessage.IDE);
     } else if (rxMessage.IDE == CAN_ID_EXT) {
+      // 扩展数据帧
       canbus_g.PushRecvExtendedData(rxMessage.Data, rxMessage.DLC);
     }
     CAN_ClearITPendingBit(CAN1, CAN_IT_FMP0);
@@ -319,8 +326,10 @@ extern "C" {
     CanRxMsg rxMessage;
     CAN_Receive(CAN1, CAN_FIFO1, &rxMessage);
     if (rxMessage.RTR == CAN_RTR_REMOTE) {
+      // 标准远程帧
       canbus_g.PushRecvRemoteData(rxMessage.StdId, rxMessage.IDE);
     } else if (rxMessage.IDE == CAN_ID_STD) {
+      // 标准数据帧
       canbus_g.PushRecvStandardData(rxMessage.StdId, rxMessage.Data, rxMessage.DLC);
     }
     CAN_ClearITPendingBit(CAN1, CAN_IT_FMP1);

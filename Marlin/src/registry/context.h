@@ -28,13 +28,19 @@
 
 // Data for invocation
 
+// 功能调用时的上下文
 class Context {
  public:
+  // Func ID
   uint16_t funcid_;
+  // MsgID
   uint16_t msgid_;
+  // 具体数据
   uint8_t * data_;
+  // 数据长度
   uint32 len_;
 
+  // 获取模组 ID
   MODULE_TYPE module() {
     return registryInstance.module();
   }

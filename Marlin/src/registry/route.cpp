@@ -25,6 +25,7 @@
 #define FUNC_LIST_INIT(list)  func_list_ = list;\
                               func_count_ = sizeof(list) / sizeof(list[0]);
 
+// 打印机相关 FuncID 列表
 const uint16_t print_func_list_[] = {
   FUNC_SET_FAN,
   FUNC_SET_FAN2,
@@ -36,6 +37,7 @@ const uint16_t print_func_list_[] = {
   FUNC_REPORT_TEMP_PID,
 };
 
+// 双喷头挤出机相关 FuncID 列表
 const uint16_t dual_extruder_func_list_[] = {
   FUNC_SET_FAN,
   FUNC_SET_FAN2,
@@ -61,6 +63,7 @@ const uint16_t dual_extruder_func_list_[] = {
   FUNC_MODULE_GET_HW_VERSION,
 };
 
+// 激光头相关 FuncID 列表
 const uint16_t laser_func_list_[] = {
   FUNC_SET_FAN,
   FUNC_SET_CAMERA_POWER,
@@ -68,6 +71,7 @@ const uint16_t laser_func_list_[] = {
   FUNC_REPORT_LASER_FOCUS,
 };
 
+// 10W激光头相关 FuncID 列表
 const uint16_t laser_10w_func_list_[] = {
   FUNC_SET_FAN,
   FUNC_SET_CAMERA_POWER,
@@ -83,17 +87,20 @@ const uint16_t laser_10w_func_list_[] = {
   FUNC_CONFIRM_PIN_STATUS,
 };
 
+// CNC头相关 FuncID 列表
 const uint16_t cnc_func_list_[] = {
   FUNC_REPORT_MOTOR_SPEED,
   FUNC_SET_MOTOR_SPEED,
 };
 
+// 外罩相关 FuncID 列表
 const uint16_t enclosure_func_list_[] = {
   FUNC_REPORT_ENCLOSURE,
   FUNC_SET_ENCLOSURE_LIGHT,
   FUNC_SET_FAN_MODULE,
 };
 
+// 
 const uint16_t tool_setting_func_list_[] = {
     FUNC_REPORT_TOOL_SETTING,
 };
@@ -110,15 +117,18 @@ const uint16_t stop_func_list_[] = {
   FUNC_REPORT_STOP_SWITCH,
 };
 
+// 净化器相关 FuncID 列表
 const uint16_t purifier_func_list_[] = {
   FUNC_SET_PURIFIER,
   FUNC_REPORT_PURIFIER,
 };
 
+// 风扇相关 FuncID 列表
 const uint16_t fan_func_list_[] = {
   FUNC_SET_FAN_MODULE,
 };
 
+// 200W CNC 头相关 FuncID 列表
 const uint16_t cnc_200w_func_list_[] = {
   FUNC_SET_MOTOR_SPEED,
   FUNC_SET_FAN,
@@ -132,6 +142,7 @@ const uint16_t cnc_200w_func_list_[] = {
   FUNC_REPORT_MOTOR_SELF_TEST_INFO,
 };
 
+// A400 外罩相关 FuncID 列表
 const uint16_t enclosure_a400_func_list_[] = {
   FUNC_REPORT_ENCLOSURE,
   FUNC_SET_ENCLOSURE_LIGHT,
@@ -139,6 +150,7 @@ const uint16_t enclosure_a400_func_list_[] = {
   FUNC_MODULE_GET_HW_VERSION,
 };
 
+// 干燥箱 相关 FuncID 列表
 const uint16_t drybox_func_list_[] = {
   FUNC_SET_FAN,
   FUNC_SET_TEMPEARTURE,
@@ -184,7 +196,11 @@ const uint16_t laser_20w40w_func_list_[] = {
 
 
 Route routeInstance;
+
+// 初始化
+// 根据模组ID，创建相应对象实例并初始化，初始化相应 FuncID 列表，设置基础版本号
 void Route::Init() {
+  // 获取模组ID
   uint32_t moduleType = registryInstance.module();
 
   switch (moduleType) {
@@ -201,10 +217,15 @@ void Route::Init() {
       FUNC_LIST_INIT(dual_extruder_func_list_);
       SetBaseVersions(1, 13, 12);
       break;
+    // 激光头
     case MODULE_LASER:
+      // 创建激光头对象
       module_ = new LaserHead;
+      // 初始化激光头模组
       module_->Init();
+      // 初始化激光头 FuncID 列表
       FUNC_LIST_INIT(laser_func_list_);
+      // 设置基础版本
       SetBaseVersions(1, 7, 0);
       break;
     case MODULE_LASER_10W:
@@ -316,9 +337,11 @@ void Route::Init() {
       SetBaseVersions(0, 0, 0);
   }
 
+  // 启动 ADC
   hal_start_adc();
 }
 
+// 根据 FuncID ，调用功能
 void Route::Invoke() {
   uint16_t func_id = contextInstance.funcid_;
   uint8_t * data = contextInstance.data_;
@@ -326,6 +349,7 @@ void Route::Invoke() {
   module_->HandModule(func_id, data, data_len);
 }
 
+// 模组例程
 void Route::ModuleLoop() {
   module_->Loop();
 }

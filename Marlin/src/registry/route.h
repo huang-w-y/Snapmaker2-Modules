@@ -52,12 +52,14 @@ class Route {
   void Init();
   void ModuleLoop();
   // eg. v1.10.2 -> SetBaseVersions(1, 10, 2)
+  // 设置基础版本
   void SetBaseVersions(uint8_t level_1, uint8_t level_2, uint8_t level_3) {
     base_version[0] = level_1;
     base_version[1] = level_2;
     base_version[2] = level_3;
   };
 
+  // 基础版本比较
   bool VersionComparison(uint8_t level_1, uint8_t level_2, uint8_t level_3) {
     if (level_1 >= base_version[0]) {
       if (level_2 >= base_version[1]) {
@@ -70,8 +72,11 @@ class Route {
   }
 
  public:
+  // 模组对象实例
   ModuleBase * module_;
+  // 模组 FuncID 列表
   uint16_t const * func_list_ = NULL;
+  // 模组 FuncID 数量
   uint8_t func_count_ = 0;
   uint8_t base_version[3] = {0, 0, 0};
  private:

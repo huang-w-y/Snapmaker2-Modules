@@ -35,18 +35,21 @@
 #define REMOTE_STD_HEARTBEAT  0x01
 #define REMOTE_STD_EM_STOP    0x02
 
+// CAN 总线发送数据结构
 struct CanTxStruct {
   uint32_t std_id;
   uint8_t data[8];
   uint8_t len;
 };
 
+// CAN 总线接收数据结构
 struct CanRxStruct {
   uint32_t std_id;
   uint8_t data[8];
   uint32_t len;
 };
 
+// CAN 总线类
 class CanBus {
  public:
   CanBus();
@@ -66,18 +69,28 @@ class CanBus {
   void SetRecvSysCfgCmd(uint32_t module_id);
   void SetRecvMsgID(uint16_t msg_id);
   uint32_t GetSendTime();
+  // 扩展帧的发送ID
   uint32_t extend_send_id_ = 0;
+  // （扩展）远程帧发送缓冲区
   RingBuffer<uint32_t> remote_send_buffer_{REMOTE_SEND_BUFFER_SIZE};
+  // 扩展远程帧接收缓冲区
+  // 通常用于接收主控的广播通知
   RingBuffer<uint32_t> remote_extended_recv_buffer_{REMOTE_RECV_BUFFER_SIZE};
+  // 标准远程帧接收缓冲区
   RingBuffer<uint16_t> remote_standard_recv_buffer_{REMOTE_RECV_BUFFER_SIZE};
+  // 扩展数据帧发送缓冲区
   RingBuffer<uint8_t> extended_send_buffer_{EXTENDED_SEND_BUFFER_SIZE};
+  // 扩展数据帧接收缓冲区
   RingBuffer<uint8_t> extended_recv_buffer_{EXTENDED_RECV_BUFFER_SIZE};
+  // 标准数据帧发送缓冲区
   RingBuffer<CanTxStruct> standard_send_buffer_{STANDARD_SEND_BUFFER_SIZE};
+  // 标准数据帧接收缓冲区
   RingBuffer<CanRxStruct> standard_recv_buffer_{STANDARD_RECV_BUFFER_SIZE};
 
  private:
   void IncomingHandler();
   void OutgoingHandler();
+  // 更新 扩展帧 ID
   uint32_t new_extended_id_;
 };
 

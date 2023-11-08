@@ -42,9 +42,16 @@ void setup() {
     4 init func id list
   */
   
+  // 自检
+  // 模组信息初始化、APP参数初始化等
   startupInstance.SelfDetct();
+  // 基本外设初始化
+  // 初始化 CAN 总线
   startupInstance.BasePeriphInit();
+  // 外设初始化
+  // 根据模组ID，创建相应对象实例并初始化，初始化相应 FuncID 列表，设置基础版本号
   startupInstance.PeriphInit();
+// FuncID 列表初始化
   startupInstance.FuncIdListInit();
 }
 

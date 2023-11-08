@@ -26,19 +26,25 @@
 #include <src/registry/route.h>
 #include "startup.h"
 
+// 自检
 uint32_t Startup::SelfDetct() {
   registryInstance.Init();
   return 0;
 }
 
+// 基本外设初始化
+// 初始化 CAN 总线
 void Startup::BasePeriphInit() {
   canbus_g.Init(registryInstance.ModuleCanId());
 }
 
+// 外设初始化
+// 根据模组ID，创建相应对象实例并初始化，初始化相应 FuncID 列表，设置基础版本号
 void Startup::PeriphInit() {
   routeInstance.Init();
 }
 
+// FuncID 列表初始化
 void Startup::FuncIdListInit() {
   registryInstance.InitlizeFuncIds();
 }

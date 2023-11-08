@@ -52,6 +52,7 @@
 #define TEMP_DEFAULT_KI 0.016
 #define TEMP_DEFAULT_KD 106.25
 
+// 模组 MAC 信息
 // same is a physical serial number put in the package, so it have to compact.
 typedef struct {
   uint8_t moduleId[2];
@@ -67,13 +68,18 @@ typedef struct {
   uint8_t hw_version;
 } ModuleMacInfo;
 
+// APP 参数信息
 typedef struct {
+    // 版本号
     uint8_t versions[APP_VARSIONS_SIZE];  // 32位版本号,位置和大小不能做更改
+    // 
     uint8_t parm_mark[2];  // aa 55
     float temp_P;
     float temp_I;
     float temp_D;
+    // 对焦好了后的Z轴高度
     uint16_t laser_high;
+    // 旋转模组相关的
     uint16_t laser_high_4_axis;
     uint8_t purifier_lifetime;
     uint8_t purifier_forced_run;
@@ -92,18 +98,28 @@ typedef struct {
     uint16_t laser_parm_checksum;
 } AppParmInfo;
 
+// 模组类型
 typedef enum {
+  // 打印机
   MODULE_PRINT             = 0,  // 0
+  // CNC
   MODULE_CNC               = 1,  // 1
+  // 激光机
   MODULE_LASER             = 2,  // 2
+  // 线性模组
   MODULE_LINEAR            = 3,  // 3
   MODULE_LIGHT             = 4,  // 4
+  // 外罩
   MODULE_ENCLOSURE         = 5,  // 5
   MODULE_ROTATE            = 6,  // 6
+  // 净化器
   MODULE_PURIFIER          = 7,  // 7
+  // 急停开关
   MODULE_EMERGENCY_STOP    = 8,  // 8
+  // CNC工具配置
   MODULE_CNC_TOOL_SETTING  = 9,  // 9
   MODULE_PRINT_V_SM1       = 10, // 10
+  // 风扇
   MODULE_FAN               = 11, // 11
   MODULE_LINEAR_TMC        = 12, // 12
   MODULE_DUAL_EXTRUDER     = 13, // 13
@@ -118,6 +134,7 @@ typedef enum {
 } MODULE_TYPE;
 
 
+// 系统命令
 typedef enum {
   CMD_M_CONFIG = 0,            // 0
   CMD_S_CONFIG_REACK,          // 1
@@ -148,6 +165,7 @@ typedef enum {
 } SYSTEM_CMD;
 
 
+// FUNCID
 typedef enum {
     FUNC_REPORT_LIMIT                     ,  // 0
     FUNC_REPORT_PROBE                     ,  // 1
