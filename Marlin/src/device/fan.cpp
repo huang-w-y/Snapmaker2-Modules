@@ -31,8 +31,11 @@
 #include <stdint.h>
 #include <wirish_time.h>
 
+// 例行程序
 void Fan::Loop() {
+  // 若启用延时关闭
   if (this->delay_close_enadle_) {
+    // 延时关闭时间到达，则关闭风扇
     if ((this->delay_start_time_ + this->delay_close_time_) <= millis()) {
       this->delay_close_enadle_ = false;
       if (!is_hardware_pwm)
@@ -43,14 +46,20 @@ void Fan::Loop() {
   }
 }
 
+// 初始化
+// 使用软件 PWM 控制
 void Fan::Init(uint8_t fan_pin) {
   this->fan_index_ =  soft_pwm_g.AddPwm(fan_pin, FAN_MAX_THRESHOLD);
 }
 
+// 初始化
+// 指定阈值
 void Fan::Init(uint8_t fan_pin, uint32_t threshold) {
   fan_index_ =  soft_pwm_g.AddPwm(fan_pin, threshold);
 }
 
+// 初始化-
+// 使用硬件 PWM
 void Fan::InitUseHardwarePwm(PWM_TIM_CHN_E tim_chn, uint8_t pin, uint32_t freq, uint16_t period, uint16_t ocpolarity) {
   this->pwm_info.tim_chn = tim_chn;
   this->pwm_info.period = period;
@@ -60,13 +69,19 @@ void Fan::InitUseHardwarePwm(PWM_TIM_CHN_E tim_chn, uint8_t pin, uint32_t freq, 
   is_hardware_pwm = true;
 }
 
+// 更改风扇 PWM 脉冲宽度
 void Fan::ChangePwm(uint8_t threshold, uint16_t delay_close_time_s) {
+  // 设置延时关闭时间
   this->delay_close_time_ = delay_close_time_s * 1000;
   if (threshold == 0) {
+    // 开始时间
     this->delay_start_time_ = millis();
+    // 启用延时关闭
     this->delay_close_enadle_ = true;
   } else {
+    // 禁止延时关闭
     this->delay_close_enadle_ = false;
+    // 设置脉冲宽度
     if (!is_hardware_pwm)
       soft_pwm_g.ChangeSoftPWM(this->fan_index_, threshold);
     else

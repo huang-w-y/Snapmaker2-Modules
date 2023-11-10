@@ -30,6 +30,7 @@
 #include <math.h>
 #include "laser_head_10w.h"
 
+// 初始化
 void LaserHead10W::Init() {
     afio_cfg_debug_ports(AFIO_DEBUG_SW_ONLY);
 
@@ -68,6 +69,7 @@ void LaserHead10W::Init() {
     }
 }
 
+// 获取硬件版本
 void LaserHead10W::GetHwVersion() {
     hw_version_.adc_value = ADC_Get(hw_version_.index);
 
@@ -86,9 +88,13 @@ void LaserHead10W::GetHwVersion() {
     }
 }
 
+// 例行程序
 void LaserHead10W::Loop() {
+    // 检测硬件版本
     GetHwVersion();
+    // 摄像头电源相关
     camera_power_.OutCtrlLoop();
+    // 风扇例程
     fan_.Loop();
     SecurityStatusCheck();
 }

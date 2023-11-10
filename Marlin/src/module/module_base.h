@@ -22,6 +22,7 @@
 #ifndef SNAPMAKERMODULES_MARLIN_SRC_MODULE_MODULE_BASE_H_
 #define SNAPMAKERMODULES_MARLIN_SRC_MODULE_MODULE_BASE_H_
 
+// 模组基类
 class ModuleBase {
  public:
   virtual void Init() {};

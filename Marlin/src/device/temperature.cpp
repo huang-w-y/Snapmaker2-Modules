@@ -30,11 +30,14 @@
 #include "src/registry/registry.h"
 
 
+// 初始化温度探测（捕获）相关
+// ADC 采样
 uint8_t Temperature::InitCapture(uint8_t adc_pin, ADC_TIM_E adc_tim) {
   adc_index_ = HAL_adc_init(adc_pin, adc_tim, 2400);
   return adc_index_;
 }
 
+// 初始化温度 PID
 void Temperature::InitPID() {
   AppParmInfo *param = &registryInstance.cfg_;
   float p=0, i=0, d=0;
@@ -52,6 +55,7 @@ void Temperature::InitPID() {
   this->pid_.Init(param->temp_P, param->temp_I, param->temp_D);
 }
 
+// 保存温度 PID 参数
 void Temperature::SavePID() {
   AppParmInfo * param = &registryInstance.cfg_;
   if ((param->temp_P != this->pid_.k_p_) ||
@@ -64,6 +68,8 @@ void Temperature::SavePID() {
   }
 }
 
+// 初始化输出通道
+// 硬件 PWM 输出
 void Temperature::InitOutCtrl(uint8_t tim_num, uint8_t tim_chn, uint8_t tim_pin, uint32_t pre_scaler/*1000000*/) {
   this->InitPID();
   this->pwm_tim_chn_ = tim_chn;
@@ -71,10 +77,13 @@ void Temperature::InitOutCtrl(uint8_t tim_num, uint8_t tim_chn, uint8_t tim_pin,
   HAL_PwmInit(tim_num, tim_chn, tim_pin, pre_scaler, 255);
 }
 
+// 上报打印头温度
 void Temperature::ReportTemprature() {
   uint16_t msgid = registryInstance.FuncId2MsgId(FUNC_REPORT_TEMPEARTURE);
   if (msgid != INVALID_VALUE) {
+    // 当前探测到的温度
     int16_t temp = (int16_t)(this->detect_celsius_ * 10);
+    // 目标温度
     int16_t target = (int16_t)this->pid_.getTarget();
 
     uint8_t u8DataBuf[8], u8Index = 0;
@@ -86,6 +95,7 @@ void Temperature::ReportTemprature() {
   }
 }
 
+// 上报温度 PID 
 void Temperature::ReportPid() {
     float pid[3];
     uint16_t msgid = registryInstance.FuncId2MsgId(FUNC_REPORT_TEMP_PID);
@@ -105,19 +115,24 @@ void Temperature::ReportPid() {
     }
 }
 
+// 获取温度采样状态，也就是 ADC 工作状态
 uint8_t Temperature::TempertuerStatus() {
   return hal_adc_status();
 }
 
+// 温度输出
+// 也就是控制加热或者散热等，让温度保持
 void Temperature::TemperatureOut() {
   detect_celsius_ = TempTableCalcCurTemp(ADC_GetCusum(adc_index_), thermistor_type_);
   uint32_t pwmOutput = pid_.output(detect_celsius_);
   HAL_PwmSetPulse(pwm_tim_num_, pwm_tim_chn_, pwmOutput);
 }
 
+// 获取温度
 void Temperature::GetTemperature(float &celsius) {
   if (TempertuerStatus()) {
     is_temp_ready_ = true;
+    // 采样温度，计算温度
     celsius = TempTableCalcCurTemp(ADC_GetCusum(adc_index_), thermistor_type_);
     detect_celsius_ = celsius;
   }
@@ -127,20 +142,25 @@ void Temperature::SetPwmDutyLimitAndThreshold(uint8_t count, int32_t threshold) 
   pid_.SetPwmDutyLimitAndThreshold(count, threshold);
 }
 
+// 关闭
+// 也就是不加热了
 void Temperature::ShutDown() {
   HAL_PwmSetPulse(pwm_tim_num_, pwm_tim_chn_, 0);
 }
 
+// 获取当前探测到的温度
 float Temperature::GetTemp() {
   return detect_celsius_;
 }
 
+// 保持温度
 void Temperature::Maintain() {
   if (TempertuerStatus()) {
     TemperatureOut();
   }
 }
 
+// 测量温度？
 void Temperature::PrfetchTempMaintain() {
   if (is_temp_ready_) {
     is_temp_ready_ = false;
@@ -148,15 +168,19 @@ void Temperature::PrfetchTempMaintain() {
   }
 }
 
+// 保持温度
 void Temperature::TempMaintain(float celsius) {
   uint32_t pwmOutput = pid_.output(celsius);
   HAL_PwmSetPulse(pwm_tim_num_, pwm_tim_chn_, pwmOutput);
 }
 
+
+// 更改目标温度
 void Temperature::ChangeTarget(uint32_t target) {
   pid_.target(target);
 }
 
+// 设置温度 PID 参数
 void Temperature::SetPID(uint8_t pid_index, float val) {
   switch (pid_index) {
     case SET_P_INDEX :

@@ -28,17 +28,28 @@
 #include "module_base.h"
 #include "laser_hw_version.h"
 
+// 风扇引脚
 #define LASER_FAN_PIN PA4
+// 摄像头电源引脚
 #define LASER_CAMERA_POWER_PIN PA8
+
+// 激光头类定义
 class LaserHead : public ModuleBase {
  public:
+  // 初始化
   void Init();
   void HandModule(uint16_t func_id, uint8_t * data, uint8_t data_len);
+  // 例行程序
   void Loop();
+  // 急停接口
   void EmergencyStop();
+  // 保存焦点
   void LaserSaveFocus(uint8_t type, uint16_t foch);
+  // 上报焦点
   void LaserReportFocus(uint8_t type);
+  // 风扇对象
   Fan fan_;
+  // 摄像头电源对象
   SwitchOutput camera_power_;
 };
 

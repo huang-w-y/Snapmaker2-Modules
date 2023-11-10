@@ -28,29 +28,47 @@
 
 #define FAN_MAX_THRESHOLD 255
 
+// 风扇- 硬件 PWM 相关配置信息
 typedef struct {
+  // 定时器通道
   PWM_TIM_CHN_E  tim_chn;
+  // 风扇引脚
   uint8_t  fan_pin;
+  // 极性
   uint16_t ocpolarity;
+  // 周期
   uint16_t period;
+  // 频率
   uint32_t freq;
 } fan_hardware_pwm_info;
 
 class Fan {
  public:
+  //  初始化
   void Init(uint8_t fan_pin);
+  // 初始化
   void Init(uint8_t fan_pin, uint32_t threshold);
+  // PWM相关初始化
   void InitUseHardwarePwm(PWM_TIM_CHN_E tim_chn, uint8_t pin, uint32_t freq, uint16_t period, uint16_t ocpolarity=0xFFFF);
+  // 例行程序
   void Loop();
+  // 更改风扇 PWM 脉冲宽度
   void ChangePwm(uint8_t threshold, uint16_t delay_close_time_s);
 
 
  private:
+  // 风扇索引
+  // 使用软件 PWM 控制风扇时的 PWM 通道索引值
   uint8_t fan_index_;
+  // 延时关闭时间
   uint32_t delay_close_time_;
+  // 延时开始时间
   uint32_t delay_start_time_;
+  // 使能延时关闭
   bool  delay_close_enadle_;
+  // 标记是否使用硬件 PWM 控制风扇
   bool  is_hardware_pwm = false;
+  // 硬件 PWM 信息
   fan_hardware_pwm_info pwm_info;
 };
 

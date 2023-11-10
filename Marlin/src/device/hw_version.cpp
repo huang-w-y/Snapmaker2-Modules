@@ -22,11 +22,13 @@
 #include "hw_version.h"
 
 
+// ADC 范围
 struct VersionADCRange {
   uint16_t lower;
   uint16_t upper;
 };
 
+// 硬件版本 与 ADC 采样值的映射关系
 // unit: mV
 static struct VersionADCRange ver_adc_range[HW_VER_MAX] = {
   {207, 447},   // 0
@@ -41,6 +43,7 @@ static struct VersionADCRange ver_adc_range[HW_VER_MAX] = {
   {2880, 3120}  // 9
 };
 
+// 初始化
 uint32_t HWVersion::Init(uint32_t adc_pin, ADC_TIM_E adc_tim) {
   version_ = (uint8_t)HW_VER_MAX;
 
@@ -51,6 +54,7 @@ uint32_t HWVersion::Init(uint32_t adc_pin, ADC_TIM_E adc_tim) {
   return adc_index_;
 }
 
+// 更新版本
 void HWVersion::UpdateVersion() {
   struct   VersionADCRange *range;
   uint32_t ver_adc;
@@ -61,11 +65,15 @@ void HWVersion::UpdateVersion() {
     return;
 
   range   = ver_adc_range;
+
+  // 获取 ADC 值
   ver_adc = ADC_Get(adc_index_);
 
   // get voltage from raw ADC with unit mV
+  // 计算出电压值
   ver_adc = (uint32_t)(ver_adc * 3300 / 4096);
 
+  // 有 bug
   for (i = 0; i < HW_VER_MAX; i++) {
     if ((ver_adc >= range->lower) && (ver_adc <= range->upper)) {
       break;

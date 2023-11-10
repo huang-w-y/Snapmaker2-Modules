@@ -24,26 +24,36 @@
 
 #include <cstdint>
 
+// 可以理解为滑动窗口滤波器
+
 class MovingAverage
 {
 private:
+  // 指向滑动窗口
   int *values;
+  // 窗口大小
   int size;
+  // 当前索引值
   int currentIndex;
+  // 总值
   int sum;
+  // 实际有效个数
   int count;
 
 public:
+  // 构造函数
   MovingAverage(int size) : size(size), currentIndex(0), sum(0), count(0)
   {
     values = new int[size]();
   }
 
+  // 析构函数
   ~MovingAverage()
   {
     delete[] values;
   }
 
+  // 添加一个数据
   void addValue(int value)
   {
     if (count < size)
@@ -62,6 +72,7 @@ public:
     currentIndex = (currentIndex + 1) % size;
   }
 
+  // 获取平均值
   int getMovingAverage() const
   {
     return sum / count;

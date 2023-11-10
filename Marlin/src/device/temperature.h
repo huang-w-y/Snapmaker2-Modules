@@ -56,9 +56,11 @@ class Temperature {
 
   bool isEnabled();
 
+  // 当前探测到的温度
   float detect_celsius_;
   bool detect_ready_;
  private:
+  // 传感器类型
   thermistor_type_e thermistor_type_;
   int last_time_;
   uint8_t adc_index_;
@@ -68,6 +70,7 @@ class Temperature {
   uint8_t pid_set_flag_ = 0;
   int count_;
   bool enabled_;
+  
   bool is_temp_ready_;
   void InitPID();
   void SavePID();

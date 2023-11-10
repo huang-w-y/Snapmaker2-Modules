@@ -65,9 +65,13 @@ const uint16_t dual_extruder_func_list_[] = {
 
 // 激光头相关 FuncID 列表
 const uint16_t laser_func_list_[] = {
+  // 设置风扇
   FUNC_SET_FAN,
+  // 设置摄像头电源
   FUNC_SET_CAMERA_POWER,
+  // 设置焦点
   FUNC_SET_LASER_FOCUS,
+  // 上报焦点
   FUNC_REPORT_LASER_FOCUS,
 };
 

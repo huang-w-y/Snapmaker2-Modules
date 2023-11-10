@@ -30,12 +30,19 @@
 #include "src/device/temperature.h"
 #include "laser_hw_version.h"
 
+// 风扇引脚
 #define LASER10W_FAN_PIN                  PA2
+// 摄像头电源引脚
 #define LASER10W_CAMERA_POWER_PIN         PA8
+// 
 #define LASER10W_AUTOFOCUS_LIGHT_CTRL_PIN PB5
+// 使能引脚
 #define LASER10W_ENBLE_PIN                PA1
+// 温度？引脚
 #define LASER10W_TEMP_PIN                 PB1
+// PWM 检测引脚
 #define LASER10W_PWM_DETECT               PA9
+// 硬件版本号检测引脚
 #define LASER_HW_VERSION_PIN              PB0
 
 // security info
@@ -53,6 +60,7 @@
 #define LSAER_FAN_FB_CH           TIM_CH4
 #define FAN_FEEDBACK_THRESHOLD    100
 
+// 10W激光头类
 class LaserHead10W : public ModuleBase {
     public:
         LaserHead10W () : ModuleBase () {
@@ -110,6 +118,7 @@ class LaserHead10W : public ModuleBase {
         int8_t protect_temp_;
         int8_t recovery_temp_;
         int8_t imu_celsius_;
+        // 激光头硬件版本
         hw_version_t hw_version_;
 };
 

@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 
+// 激光头引硬件版本
 typedef struct {
     uint8_t number;
     uint8_t index;

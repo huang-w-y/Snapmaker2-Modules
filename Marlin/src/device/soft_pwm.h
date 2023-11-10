@@ -25,28 +25,46 @@
 #include <stdint.h>
 #include "device_base.h"
 
+// 支持五路软件模拟PWM输出
 #define PWM_MAX_COUNT 5
+
+// 使用 TIM3
 #define SOFT_PWM_TIM 3
 
 #define SOFT_PWM_US(us) (us / 10)
 #define SOFT_PWM_MS(ms) SOFT_PWM_US(ms * 1000)
 
+// 软件 PWM 类
 class SoftPwm {
  public:
+  // 中断处理
   void Isr();
+  // 设置 PWM 占空比
   void ChangeSoftPWM(uint8_t pwm_index, uint32_t threshold);
+  // 新增PWM输出通道
   int AddPwm(uint8_t pwm_pin, uint32_t period);
+  // 启用定时器
   void TimStart();
 
  private:
+  // 相关定时器初始化
   void HalTimInit();
+
+  // 定时器已初始化标志
   bool tim_init_falg_ = false;
+  // 已使用的 PWM 通道数
   uint8_t used_count_ = 0;
+  // 软件模拟PWM输出引脚
   uint32_t pin_list_[PWM_MAX_COUNT];
+  // PWM 输出的比较值，小于此值输出高电平，大于此值输出低电平
   uint32_t  threshold_[PWM_MAX_COUNT];
+  // 定时周期
   uint32_t  period_[PWM_MAX_COUNT];
+  // 各通道当前计数值
   uint32_t  cnt_[PWM_MAX_COUNT];
+  // 未使用
   uint32_t delay_close_time[PWM_MAX_COUNT];
+  // 未使用
   uint32_t delay_start_time[PWM_MAX_COUNT];
 };
 

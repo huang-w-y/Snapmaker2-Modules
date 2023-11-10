@@ -24,11 +24,14 @@
 #include "src/HAL/hal_flash.h"
 #include "src/registry/registry.h"
 #include "src/core/can_bus.h"
+
+// 初始化接口
 void LaserHead::Init() {
   this->fan_.Init(LASER_FAN_PIN);
   this->camera_power_.Init(LASER_CAMERA_POWER_PIN, 0);
 }
 
+// 上报焦距
 void LaserHead::LaserReportFocus(uint8_t type) {
     AppParmInfo *param = &registryInstance.cfg_;;
     uint8_t u8DataBuf[8], u8Index = 0;
@@ -48,28 +51,39 @@ void LaserHead::LaserReportFocus(uint8_t type) {
       canbus_g.PushSendStandardData(msgid, u8DataBuf, u8Index);
     }
 }
+
+// 保存焦距
 void LaserHead::LaserSaveFocus(uint8_t type, uint16_t foch) {
     AppParmInfo *param = &registryInstance.cfg_;;
+    // 旋转模组相关焦点
     if (type) {
       param->laser_high_4_axis = foch;
     } else {
+      // xyz 相关的焦点
       param->laser_high = foch;
     }
     registryInstance.SaveCfg();
 }
+
+// 模块处理句柄
 void LaserHead::HandModule(uint16_t func_id, uint8_t * data, uint8_t data_len) {
   uint8_t focus_type;
   switch (func_id) {
+    // 更改风扇PWM
     case FUNC_SET_FAN:
       this->fan_.ChangePwm(data[1], data[0]);
       break;
+    // 设置摄像头电源
     case FUNC_SET_CAMERA_POWER:
       this->camera_power_.ReastOut(data[0]<<8 | data[1]);
       break;
+
+    // 设置焦距
     case FUNC_SET_LASER_FOCUS:
       focus_type = data_len > 2 ? data[2] : 0;
       this->LaserSaveFocus(focus_type, data[0]<<8 | data[1]);
       break;
+    // 上报焦距
     case FUNC_REPORT_LASER_FOCUS:
       focus_type = data_len ? data[0] : 0;
       this->LaserReportFocus(focus_type);
@@ -77,10 +91,12 @@ void LaserHead::HandModule(uint16_t func_id, uint8_t * data, uint8_t data_len) {
   }
 }
 
+// 执行急停的接口
 void LaserHead::EmergencyStop() {
   fan_.ChangePwm(0, 0);
 }
 
+// 例行程序
 void LaserHead::Loop() {
   this->camera_power_.OutCtrlLoop();
   this->fan_.Loop();

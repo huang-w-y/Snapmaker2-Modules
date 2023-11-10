@@ -26,6 +26,7 @@
 #include "device_base.h"
 #include "src/HAL/hal_adc.h"
 
+// 硬件版本列表
 enum HWVersionList {
   HW_VER_0,
   HW_VER_1,
@@ -40,6 +41,7 @@ enum HWVersionList {
   HW_VER_MAX
 };
 
+// 硬件版本类
 class HWVersion {
   public:
     uint32_t Init(uint32_t adc_pin, ADC_TIM_E adc_tim);

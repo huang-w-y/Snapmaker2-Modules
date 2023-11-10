@@ -47,6 +47,7 @@
 
 #define  APP_VARSIONS_SIZE 32
 
+// 激光模组中默认的对焦后的 z 轴高度
 #define LASER_DEFAULT_HIGH 65000
 #define TEMP_DEFAULT_KP 13
 #define TEMP_DEFAULT_KI 0.016
@@ -74,27 +75,35 @@ typedef struct {
     uint8_t versions[APP_VARSIONS_SIZE];  // 32位版本号,位置和大小不能做更改
     // 
     uint8_t parm_mark[2];  // aa 55
+    // 温度相关的 PID 参数
     float temp_P;
     float temp_I;
     float temp_D;
-    // 对焦好了后的Z轴高度
+    // 焦距
     uint16_t laser_high;
-    // 旋转模组相关的
+    // 旋转模组中心轴焦距
     uint16_t laser_high_4_axis;
     uint8_t purifier_lifetime;
     uint8_t purifier_forced_run;
     uint8_t purifier_fan_gears;
+    // 保护温度
     int8_t laser_protect_temp;
+    // 高功率激光在线ID配置
     uint32_t module_sync_id;
+    // 恢复温度
     int8_t laser_recovery_temp;
     float x_hotend_offset;
     float y_hotend_offset;
     float z_hotend_offset;
     float probe_sensor_compensation_0;
     float probe_sensor_compensation_1;
+    // 火焰监测传感器触发值
     uint16_t fire_sensor_trigger_value;
+    // 十字光与激光工作点的偏移 x
     float laser_crosslight_offset_x;
+    // 十字光与激光工作点的偏移 y
     float laser_crosslight_offset_y;
+    // 激光参数信息校验值
     uint16_t laser_parm_checksum;
 } AppParmInfo;
 

@@ -27,21 +27,30 @@
 
 
 SoftPwm soft_pwm_g;
+
+// 中断处理函数
 void PwmTimIsrCallBack() {
   soft_pwm_g.Isr();
 }
 
+// 相关定时器初始化
 void SoftPwm::HalTimInit() {
   if (this->tim_init_falg_ == true) {
     return ;
   }
+
+  // 周期为 10us 
   HAL_timer_init(SOFT_PWM_TIM, 72, 10);
+  // 中断优先级设置
   HAL_timer_nvic_init(SOFT_PWM_TIM, 3, 3);
+  // 注册中断处理函数
   HAL_timer_cb_init(SOFT_PWM_TIM, PwmTimIsrCallBack);
+  // 启用中断
   HAL_timer_enable(SOFT_PWM_TIM);
   this->tim_init_falg_ = true;
 }
 
+// 启用定时器
 void SoftPwm::TimStart() {
   HAL_timer_init(SOFT_PWM_TIM, 72, 10);
   HAL_timer_nvic_init(SOFT_PWM_TIM, 3, 3);
@@ -49,17 +58,23 @@ void SoftPwm::TimStart() {
   HAL_timer_enable(SOFT_PWM_TIM);
 }
 
+// 中断处理
 void SoftPwm::Isr() {
   for (int i = 0; i < this->used_count_; i++) {
+
     if (this->cnt_[i] < (this->threshold_[i])) {
+      // 输出高电平
       digitalWrite(this->pin_list_[i], HIGH);
     } else {
+      // 输出低电平
       digitalWrite(this->pin_list_[i], LOW);
     }
+    // 计数值累积
     this->cnt_[i] = (this->cnt_[i] + 1) % this->period_[i];
   }
 }
 
+// 新增PWM输出通道
 int SoftPwm::AddPwm(uint8_t pwm_pin, uint32_t period) {
   uint8_t cur_index = this->used_count_;
   if (cur_index >= PWM_MAX_COUNT) {
@@ -75,6 +90,7 @@ int SoftPwm::AddPwm(uint8_t pwm_pin, uint32_t period) {
   return cur_index;
 }
 
+// 设置 PWM 占空比
 void SoftPwm::ChangeSoftPWM(uint8_t pwm_index, uint32_t threshold) {
   if (pwm_index >= PWM_MAX_COUNT) {
     return ;
