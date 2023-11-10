@@ -32,14 +32,23 @@
 
 // 初始化
 void LaserHead10W::Init() {
+    // 初始化调试模式
     afio_cfg_debug_ports(AFIO_DEBUG_SW_ONLY);
 
+    // 初始化摄像头电源
     camera_power_.Init(LASER10W_CAMERA_POWER_PIN, 0, OUTPUT);
+
+    // 
     autofocus_light_.Init(LASER10W_AUTOFOCUS_LIGHT_CTRL_PIN, 0, OUTPUT);
+    // 初始化激光电源总开关
     laser_power_ctrl_.Init(LASER10W_ENBLE_PIN, 0, OUTPUT);
+    // 初始化风扇反馈
     fan_.Init(LASER10W_FAN_PIN, LSAER_FAN_FB_IC_TIM, LSAER_FAN_FB_CH, LSAER_FAN_FB_IT_CH, FAN_FEEDBACK_THRESHOLD);
+    // 初始化温度检测
     temperature_.InitCapture(LASER10W_TEMP_PIN, ADC_TIM_4);
+    // 初始化硬件版本检测
     hw_version_.index = HAL_adc_init(LASER_HW_VERSION_PIN, ADC_TIM_4, ADC_PERIOD_DEFAULT);
+    // 初始化 PWM 检测引脚
     pwm_detect_.Init(LASER10W_PWM_DETECT, INPUT_PULLUP);
 
     AppParmInfo *param = &registryInstance.cfg_;
@@ -96,9 +105,11 @@ void LaserHead10W::Loop() {
     camera_power_.OutCtrlLoop();
     // 风扇例程
     fan_.Loop();
+    // 激光安全状态检测
     SecurityStatusCheck();
 }
 
+// 处理句柄
 void LaserHead10W::HandModule(uint16_t func_id, uint8_t * data, uint8_t data_len) {
     uint8_t focus_type;
     switch (func_id) {
@@ -145,12 +156,14 @@ void LaserHead10W::HandModule(uint16_t func_id, uint8_t * data, uint8_t data_len
   }
 }
 
+// 紧急处理
 void LaserHead10W::EmergencyStop() {
     laser_power_ctrl_.Out(0);
     autofocus_light_.Out(0);
     fan_.ChangePwm(0, 0);
 }
 
+// 激光安全状态检测
 void LaserHead10W::SecurityStatusCheck() {
     // wait message id to be asigned
     if (registryInstance.FuncId2MsgId(FUNC_REPORT_SECURITY_STATUS) == INVALID_VALUE) {
@@ -165,18 +178,21 @@ void LaserHead10W::SecurityStatusCheck() {
         }
     }
 
+    // 检测打印头温度
     if (laser_celsius_ > protect_temp_) {
         security_status_ |= FAULT_LASER_TEMP;
     } else if (laser_celsius_ < recovery_temp_) {
         security_status_ &= ~FAULT_LASER_TEMP;
     }
 
+    // 检测 IMU 角度
     if ((roll_ <= roll_min_) || (roll_ >= roll_max_) || (pitch_ <= pitch_min_) || (pitch_ >= pitch_max_)) {
         security_status_ |= FAULT_LASER_GESTURE;
     } else {
         security_status_ &= ~FAULT_LASER_GESTURE;
     }
 
+    // 检测风扇转速
     if (fan_.get_feed_back_state() == false) {
         security_status_ |= FAULT_LASER_FAN_RUN;
     } else {
@@ -193,6 +209,7 @@ void LaserHead10W::SecurityStatusCheck() {
     }
 }
 
+// 设置激光自动对焦辅助灯状态
 void LaserHead10W::SetAutoFocusLight(uint8_t state) {
   autofocus_light_.Out(state ? 1 : 0);
 
@@ -204,6 +221,7 @@ void LaserHead10W::SetAutoFocusLight(uint8_t state) {
   }
 }
 
+// 高功率激光安全状态上报
 void LaserHead10W::ReportSecurityStatus() {
   uint8_t buf[8];
   uint16_t msgid = registryInstance.FuncId2MsgId(FUNC_REPORT_SECURITY_STATUS);
@@ -229,6 +247,7 @@ void LaserHead10W::ReportSecurityStatus() {
   }
 }
 
+// 保存焦距
 void LaserHead10W::LaserSaveFocus(uint8_t type, uint16_t foch) {
     AppParmInfo *param = &registryInstance.cfg_;
     if (type) {
@@ -239,6 +258,7 @@ void LaserHead10W::LaserSaveFocus(uint8_t type, uint16_t foch) {
     registryInstance.SaveCfg();
 }
 
+// 上报焦距
 void LaserHead10W::LaserReportFocus(uint8_t type) {
     AppParmInfo *param = &registryInstance.cfg_;
     uint8_t u8DataBuf[8], u8Index = 0;
@@ -259,6 +279,9 @@ void LaserHead10W::LaserReportFocus(uint8_t type) {
     }
 }
 
+// 高功率激光在线ID配置
+// 也就是个序列号
+// 实际是为屏幕的开机引导服务，也就是屏幕如果检测到该模组是第一次接入，那么就会引导用户走开机引导流程。
 void LaserHead10W::LaserOnlineStateSync(uint8_t *data) {
     AppParmInfo *param = &registryInstance.cfg_;
     if (data[0] == 1) {
@@ -281,6 +304,7 @@ void LaserHead10W::LaserOnlineStateSync(uint8_t *data) {
     }
 }
 
+// 设置保护温度
 void LaserHead10W::LaserSetProtectTemp(uint8_t *data) {
     AppParmInfo *param = &registryInstance.cfg_;
     protect_temp_ = data[0];
@@ -291,6 +315,7 @@ void LaserHead10W::LaserSetProtectTemp(uint8_t *data) {
     registryInstance.SaveCfg();
 }
 
+// 激光电源总开关控制
 void LaserHead10W::LaserCtrl(uint8_t *data) {
     switch (data[0]) {
         case 0:
@@ -310,6 +335,7 @@ void LaserHead10W::LaserCtrl(uint8_t *data) {
   }
 }
 
+// 上报模组硬件版本号
 void LaserHead10W::LaserReportHWVersion() {
   ModuleMacInfo * mac = (ModuleMacInfo *)FLASH_MODULE_PARA;
 
@@ -327,6 +353,7 @@ void LaserHead10W::LaserReportHWVersion() {
   }
 }
 
+// 上报 PWM 检测引脚状态
 void LaserHead10W::LaserReportPinState() {
   uint8_t buf[1];
   uint8_t index = 0;
@@ -337,6 +364,8 @@ void LaserHead10W::LaserReportPinState() {
   }
 }
 
+// PWM 引脚检测确认
+// 也就是确认 PWM 引脚检测正确了，需要清除相应标志位
 void LaserHead10W::LaserConfirmPinState() {
   security_status_ &= ~FAULT_LASER_PWM_PIN;
 }
