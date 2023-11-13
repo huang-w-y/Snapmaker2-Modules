@@ -247,6 +247,8 @@ typedef enum {
     FUNC_SET_CROSSLIGHT_OFFSET            ,  // 66
     FUNC_GET_CROSSLIGHT_OFFSET            ,  // 67
     FUNC_MODULE_LASER_BRANCH_CTRL         ,  // 68
+    FUNC_HWY_TEST_LIGHT_SET_STATE = 100   ,
+    FUNC_HWY_TEST_LIGHT_GET_STATE         ,
 } FUNC_ID;
 
 typedef enum {

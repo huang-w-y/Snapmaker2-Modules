@@ -206,6 +206,8 @@ const uint16_t laser_20w40w_func_list_[] = {
 const uint16_t hwy_test_light_func_list_[] = {
   FUNC_SET_CROSSLIGHT,
   FUNC_GET_CROSSLIGHT_STATE,
+  FUNC_HWY_TEST_LIGHT_SET_STATE,
+  FUNC_HWY_TEST_LIGHT_GET_STATE,
 };
 
 

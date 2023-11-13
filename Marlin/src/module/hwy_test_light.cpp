@@ -59,6 +59,20 @@ void HWYTestLight::HandModule(uint16_t func_id, uint8_t * data, uint8_t data_len
             GetLightState();
         }
         break;
+
+        /* 设置灯状态 */
+        case FUNC_HWY_TEST_LIGHT_SET_STATE:
+        {
+            SetHwyLightState(data[0]);
+        }
+        break;
+
+        /* 获取灯状态 */
+        case FUNC_HWY_TEST_LIGHT_GET_STATE:
+        {
+            GetHwyLightState();
+        }
+        break;
         
         default:
         {
@@ -124,3 +138,47 @@ void HWYTestLight::GetLightState(void)
     }
 }
 
+/**
+ * @brief 设置灯状态
+ * 
+ * @param state 
+ */
+void HWYTestLight::SetHwyLightState(uint8_t state)
+{
+    if (0 == state)
+    {
+        light_state_.Out(TEST_LIGHT_STATE_OFF);
+    }
+    else
+    {
+        light_state_.Out(TEST_LIGHT_STATE_ON);
+    }
+}
+
+/**
+ * @brief 获取灯状态
+ * 
+ */
+void HWYTestLight::GetHwyLightState(void)
+{
+    uint8_t buf[1];
+    uint8_t index = 0;
+    uint8_t state = 0;
+    uint16_t msgid = registryInstance.FuncId2MsgId(FUNC_HWY_TEST_LIGHT_GET_STATE);
+
+    state = digitalRead(TEST_LIGHT_PIN);
+    if (TEST_LIGHT_STATE_OFF == state)
+    {
+        state = 0;
+    }
+    else
+    {
+        state = 1;
+    }
+
+    if (msgid != INVALID_VALUE)
+    {
+        buf[index++] = state;
+        canbus_g.PushSendStandardData(msgid, buf, index);
+    }
+}

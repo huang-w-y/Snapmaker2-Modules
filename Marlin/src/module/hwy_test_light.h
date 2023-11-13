@@ -22,6 +22,8 @@ public:
 public:
     void SetLightState(uint8_t state);
     void GetLightState(void);
+    void SetHwyLightState(uint8_t state);
+    void GetHwyLightState(void);
 
 private:
     /* 灯状态 */
