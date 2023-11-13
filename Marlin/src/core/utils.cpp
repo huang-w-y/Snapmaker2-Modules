@@ -21,6 +21,7 @@
 
 #include "utils.h"
 #include "string.h"
+// 十进制转三十六进制
 int Number10To36str(uint32_t num, uint8_t *OutBuf, uint8_t BufLen) {
 	int i = 0, mod;
 	memset(OutBuf, '0', BufLen);
@@ -36,6 +37,8 @@ int Number10To36str(uint32_t num, uint8_t *OutBuf, uint8_t BufLen) {
 	}
 	return (num == 0);
 }
+
+// 三十六进制转十进制
 int Number36To10(uint8_t *data, uint8_t len) {
   int ret = 0;
 
@@ -51,6 +54,7 @@ int Number36To10(uint8_t *data, uint8_t len) {
   return ret;
 }
 
+// 计算校验和
 uint16_t CalcChecksum(uint8_t *data, uint16_t len) {
   uint32_t checksum = 0;
   for (int i = 0; i < len -1; i = i + 2) {

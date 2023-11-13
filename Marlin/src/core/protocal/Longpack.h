@@ -27,12 +27,22 @@
 
 #define MAX_SYS_CMD_LEN 1024
 
+/**
+ * @brief 包头
+ * 
+ */
 struct PackHead {
+  // 包头1 -- 0xAA
   uint8_t magic1;
+  // 包头2 -- 0x55
   uint8_t magic2;
+  // 包长度高八位
   uint8_t lenHigh;
+  // 包长度第八位
   uint8_t lenLow;
+  // 协议版本
   uint8_t version;
+  // 
   uint8_t lenCheck;
   uint8_t dataCheckHigh;
   uint8_t dataCheckLow;
@@ -40,18 +50,25 @@ struct PackHead {
 
 
 
+// 长包类
 class Longpack {
  public:
+  // 解析包
   ERR_E parseCmd();
+  // 发送长包
   void sendLongpack(uint8_t* data, uint16_t len);
+  // 发送长包
   void sendLongpack(uint16_t* data, uint16_t len);
   void cmd_clean();
   public:
+    // 包数据
     uint8_t packData_[MAX_SYS_CMD_LEN];
     uint8_t * cmd = packData_ + sizeof(PackHead);
+    // 包长度，不含包头
     uint16_t len_ = 0;
 
   private:
+    // 接收索引值
     uint16_t recv_index_ = 0;
 };
 

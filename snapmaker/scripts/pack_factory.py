@@ -77,6 +77,12 @@ def get_mac_info(id, sn, p1, p2, p3, p4, hw):
     minute = encode_10_to_36(t.tm_min, 2)
     sec = encode_10_to_36(t.tm_sec, 2)
     random = encode_10_to_36(0, 4)
+    # 创建打包一个二进制数据包
+    # 2s 表示长度为 2 的字符串，4s 表示长度为 4 的字符串
+    # c 表示一个字符，ccc 表示三个字符
+    # i 表示一个整数
+    # iiiii 表示五个整数
+    # B 表示一个无符号字符
     mac = struct.pack('2sccc2s2s2sB4siiiiiB', module_id, year, mon, day,
                         hour, minute, sec, 0, random, sn,
                         p1, p2, p3, p4, hw)
@@ -107,10 +113,13 @@ def write_boot_file(file, boot):
     file.write(boot)
 
 
+# 写入 mac 信息
 def write_module_parm(file, mac):
     file.seek(FLASH_MODULE_PARA, 0)
+    # 先填充为全 1
     file.write(bytes([0xff for i in range(MAC_PARA_SIZE)]))
     file.seek(FLASH_MODULE_PARA, 0)
+    # 再写入 mac 信息
     file.write(mac)
 
 
@@ -265,7 +274,9 @@ def main(argv=None):
 
     try:
         with open(file_path, 'wb') as f:
+            # 先写入 bootloader
             write_boot_file(f, boot)
+            # 再写入 mac 信息
             write_module_parm(f, mac)
             write_public_parm(f)
             write_app_parm(f, version)

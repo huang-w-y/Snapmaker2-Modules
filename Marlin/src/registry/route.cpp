@@ -229,7 +229,7 @@ void Route::Init() {
       module_->Init();
       // 初始化激光头 FuncID 列表
       FUNC_LIST_INIT(laser_func_list_);
-      // 设置基础版本
+      // 设置模组降级时所允许的最低固件版本号
       SetBaseVersions(1, 7, 0);
       break;
     case MODULE_LASER_10W:
