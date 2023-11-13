@@ -46,6 +46,8 @@
 #include "src/module/drybox.h"
 #include "src/module/calibrator.h"
 #include "src/module/laser_head_20W_40W.h"
+#include "src/module/hwy_test_light.h"
+
 class Route {
  public:
   void Invoke();

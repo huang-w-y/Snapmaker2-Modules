@@ -199,6 +199,17 @@ const uint16_t laser_20w40w_func_list_[] = {
 };
 
 
+/**
+ * @brief hwy_test_light FuncID 列表
+ * 
+ */
+const uint16_t hwy_test_light_func_list_[] = {
+  FUNC_SET_CROSSLIGHT,
+  FUNC_GET_CROSSLIGHT_STATE,
+};
+
+
+
 Route routeInstance;
 
 // 初始化
@@ -334,6 +345,15 @@ void Route::Init() {
       FUNC_LIST_INIT(laser_20w40w_func_list_);
       SetBaseVersions(1, 13, 13);
       break;
+
+    /* hwy_test_light 模组 */
+    case MODULE_HWY_TEST_LIGHT:
+      module_ = new HWYTestLight;
+      module_->Init();
+      FUNC_LIST_INIT(hwy_test_light_func_list_);
+      SetBaseVersions(0, 0, 1);
+      break;
+
 
     default:
       module_ = new ModuleBase();
