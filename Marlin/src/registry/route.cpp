@@ -208,6 +208,7 @@ const uint16_t hwy_test_light_func_list_[] = {
   FUNC_GET_CROSSLIGHT_STATE,
   FUNC_HWY_TEST_LIGHT_SET_STATE,
   FUNC_HWY_TEST_LIGHT_GET_STATE,
+  FUNC_HWY_TEST_SACP_TEST_1,
 };
 
 

@@ -24,6 +24,7 @@ public:
     void GetLightState(void);
     void SetHwyLightState(uint8_t state);
     void GetHwyLightState(void);
+    void SacpTest1(void);
 
 private:
     /* 灯状态 */

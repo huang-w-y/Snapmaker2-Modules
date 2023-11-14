@@ -249,6 +249,7 @@ typedef enum {
     FUNC_MODULE_LASER_BRANCH_CTRL         ,  // 68
     FUNC_HWY_TEST_LIGHT_SET_STATE = 100   ,
     FUNC_HWY_TEST_LIGHT_GET_STATE         ,
+    FUNC_HWY_TEST_SACP_TEST_1             ,
 } FUNC_ID;
 
 typedef enum {

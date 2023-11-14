@@ -2,6 +2,7 @@
 #include <src/HAL/hal_tim.h>
 #include "src/registry/registry.h"
 #include "src/core/can_bus.h"
+#include <string.h>
 
 
 #define TEST_LIGHT_STATE_OFF                        (0)     /**< 开灯 */
@@ -73,6 +74,13 @@ void HWYTestLight::HandModule(uint16_t func_id, uint8_t * data, uint8_t data_len
             GetHwyLightState();
         }
         break;
+
+        /* SACP TEST 1 */
+        case FUNC_HWY_TEST_SACP_TEST_1:
+        {
+            SacpTest1();
+        }
+        break;
         
         default:
         {
@@ -80,6 +88,22 @@ void HWYTestLight::HandModule(uint16_t func_id, uint8_t * data, uint8_t data_len
         }
         break;
     }
+}
+
+/**
+ * @brief SACP TEST 1 -- 新增 SACP 协议
+ * 
+ * @param type 
+ */
+void HWYTestLight::SacpTest1(void)
+{
+  uint8_t buff[8] = {0};
+  uint16_t msgid = registryInstance.FuncId2MsgId(FUNC_HWY_TEST_SACP_TEST_1);
+  if (msgid != INVALID_VALUE)
+  {
+    memcpy(buff, "sacp_t1", sizeof("sacp_t1"));
+    canbus_g.PushSendStandardData(msgid, buff, strlen("sacp_t1"));
+  }
 }
 
 
