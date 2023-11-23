@@ -192,6 +192,8 @@ const int32_t temptable_ntc_wmt7029[][2] = {
   { OV(4090), -30 }
 };
 
+// TODO : 增加新热敏电阻的映射表
+
 // 参数 u32Raw: 累计 OVERSAMPLENR 次的采样值
 float32 TempTableCalcCurTemp(uint32_t u32Raw, thermistor_type_e thermistor) {
     float32 celsius = 0;

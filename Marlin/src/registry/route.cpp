@@ -184,6 +184,21 @@ const uint16_t laser_20w40w_func_list_[] = {
   FUNC_MODULE_LASER_BRANCH_CTRL,
 };
 
+const uint16_t laser_red_2w_func_list_[] = {
+  FUNC_SET_FAN,
+  FUNC_SET_LASER_FOCUS,
+  FUNC_REPORT_LASER_FOCUS,
+  FUNC_REPORT_SECURITY_STATUS,
+  FUNC_MODULE_ONLINE_SYNC,
+  FUNC_MODULE_SET_TEMP,
+  FUNC_MODULE_LASER_CTRL,
+  FUNC_MODULE_GET_HW_VERSION,
+  FUNC_REPORT_PIN_STATUS,
+  FUNC_CONFIRM_PIN_STATUS,
+  FUNC_SET_CROSSLIGHT,
+  FUNC_GET_CROSSLIGHT_STATE,
+};
+
 
 Route routeInstance;
 void Route::Init() {
@@ -310,6 +325,13 @@ void Route::Init() {
       module_->Init();
       FUNC_LIST_INIT(laser_20w40w_func_list_);
       SetBaseVersions(1, 13, 13);
+      break;
+
+    case MODULE_LASER_RED_2W_2023:
+      module_ = new LaserHeadRed;
+      module_->Init();
+      FUNC_LIST_INIT(laser_red_2w_func_list_);
+      SetBaseVersions(1, 13, 18);
       break;
 
     default:
