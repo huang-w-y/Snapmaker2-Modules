@@ -28,11 +28,13 @@
 #include "src/configuration.h"
 #include "src/registry/registry.h"
 
+// 初始化
 uint8_t NozzleIdentify::Init(uint8_t adc_pin, ADC_TIM_E adc_tim) {
   adc_index_ = HAL_adc_init(adc_pin, adc_tim, ADC_PERIOD_DEFAULT);
   return adc_index_;
 }
 
+// 设置喷嘴类型-电压值映射表
 void NozzleIdentify::SetNozzleTypeCheckArray(thermistor_type_e type) {
   switch (type) {
     case THERMISTOR_NTC3950:
@@ -48,6 +50,7 @@ void NozzleIdentify::SetNozzleTypeCheckArray(thermistor_type_e type) {
   }
 }
 
+// 根据 ADC 采样值确定喷嘴类型
 nozzle_type_t NozzleIdentify::CheckNozzleType(uint16_t adc) {
   uint32_t i;
 
@@ -60,10 +63,12 @@ nozzle_type_t NozzleIdentify::CheckNozzleType(uint16_t adc) {
   return NOZZLE_TYPE_MAX;
 }
 
+// 获取喷嘴类型
 nozzle_type_t NozzleIdentify::GetNozzleType() {
   return nozzle_type_;
 }
 
+// 上报喷嘴类型
 void NozzleIdentify::ReportNozzle(uint8_t nozzle) {
   uint8_t buf[8];
   uint8_t index = 0;
@@ -76,6 +81,7 @@ void NozzleIdentify::ReportNozzle(uint8_t nozzle) {
   }
 }
 
+// 例行程序
 bool NozzleIdentify::CheckLoop() {
   uint16_t raw_adc_tmp;
   uint16_t raw_adc_diff = 0;
@@ -84,6 +90,7 @@ bool NozzleIdentify::CheckLoop() {
     return true;
   }
 
+  // ADC 采样
   raw_adc_tmp = ADC_Get(adc_index_);
 
   if (raw_adc_tmp >= raw_adc_value_) {
@@ -92,6 +99,7 @@ bool NozzleIdentify::CheckLoop() {
     raw_adc_diff = raw_adc_value_ - raw_adc_tmp;
   }
 
+  // 滤波
   if (raw_adc_diff > 20) {
     adc_filter_count_++;
   } else {
@@ -106,6 +114,7 @@ bool NozzleIdentify::CheckLoop() {
     return false;
   }
 
+  // 确认、更新喷嘴类型
   nozzle_type_t nozzle_type = CheckNozzleType(raw_adc_value_);
 
   if (nozzle_type_ != nozzle_type) {

@@ -92,10 +92,15 @@ typedef struct {
     uint32_t module_sync_id;
     // 恢复温度
     int8_t laser_recovery_temp;
+    // 热端偏移量 X
     float x_hotend_offset;
+    // 热端偏移量 Y
     float y_hotend_offset;
+    // 热端偏移量 Z
     float z_hotend_offset;
+    // 探针补偿值
     float probe_sensor_compensation_0;
+    // 探针补偿值
     float probe_sensor_compensation_1;
     // 火焰监测传感器触发值
     uint16_t fire_sensor_trigger_value;

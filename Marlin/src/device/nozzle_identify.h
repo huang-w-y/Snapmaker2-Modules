@@ -29,6 +29,7 @@
 #define PT100_NOZZLE_TYPE_BASE_COUNT    0
 #define NTC3950_NOZZLE_TYPE_BASE_COUNT  20
 
+// 喷嘴类型
 typedef enum {
   NOZZLE_TYPE_0,
   NOZZLE_TYPE_1,
@@ -43,6 +44,7 @@ typedef enum {
   NOZZLE_TYPE_MAX,
 } nozzle_type_t;
 
+// ADC 电压值 -- 喷嘴类型 映射表
 typedef struct {
   uint16_t min;
   uint16_t max;
@@ -88,9 +90,13 @@ class NozzleIdentify {
 
  private:
   uint8_t adc_index_;
+  // ADC 采样值
   uint16_t raw_adc_value_;
+  // 喷嘴类型
   nozzle_type_t nozzle_type_;
+  // 滤波计数值、滤波窗口
   uint8_t adc_filter_count_;
+  // 喷嘴类型基值
   uint8_t nozzle_type_base_count_;
   const nozzle_adc_domain_t *nozzle_type_array_;
 };

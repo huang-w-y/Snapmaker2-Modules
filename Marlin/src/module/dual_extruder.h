@@ -64,22 +64,31 @@
 
 #define PROTECTION_TEMPERATURE  320
 
+// 风扇类型
 typedef enum {
+  // 左挤出机风扇
   LEFT_MODEL_FAN,
+  // 右挤出机风扇
   RIGHT_MODEL_FAN,
+  // 喷嘴风扇
   NOZZLE_FAN
 }fan_e;
 
+// 喷嘴状态
 typedef enum {
   EXTRUDER_STATUS_CHECK,
   EXTRUDER_STATUS_IDLE,
 }extruder_status_e;
 
+// 步进电机运动速度节点
 typedef struct {
+  // 脉冲个数
   uint32_t pulse_count;
+  // 持续时间
   uint16_t timer_time;
 }speed_node_t;
 
+// 运动类型
 typedef enum {
   GO_HOME,
   MOVE_SYNC,
@@ -149,25 +158,37 @@ class DualExtruder : public ModuleBase {
     Fan left_model_fan_;
     Fan right_model_fan_;
     Fan nozzle_fan_;
+    // 接近开关传感器
     SwitchInput probe_proximity_switch_;               // proximity switch sensor
+    // 左右光耦器
     SwitchInput probe_left_extruder_optocoupler_;      // left extruder optocoupler sensor
     SwitchInput probe_right_extruder_optocoupler_;     // right extruder optocoupler sensor
     SwitchInput probe_left_extruder_conductive_;       // left extruder conductive sensor
     SwitchInput probe_right_extruder_conductive_;      // right extruder conductive sensor
+    // 断料监测
     SwitchInput out_of_material_detect_0_;
     SwitchInput out_of_material_detect_1_;
+    // 工作喷嘴片选
     SwitchOutput extruder_cs_0_;
     SwitchOutput extruder_cs_1_;
+    // 左挤出机温度、或者说喷嘴温度，用于融化耗材的
     Temperature temperature_0_;
+    // 右挤出机温度、或者说喷嘴温度，用于融化耗材的
     Temperature temperature_1_;
     NozzleIdentify nozzle_identify_0_;
     NozzleIdentify nozzle_identify_1_;
 
+    // 切换喷嘴相关的电机控制引脚
+    // 电机转动方向控制引脚--正转/反转
     SwitchOutput z_motor_dir_;
+    // 步进信号引脚--旋转步数
     SwitchOutput z_motor_step_;
+    // 使能信号引脚--启用/禁用步进电机旋转
     SwitchOutput z_motor_en_;
+    // 控制信号引脚--调整旋转速度/方向等
     SwitchOutput z_motor_cur_ctrl_;
     SwitchInput limit_switch_;
+    // 接近开关电源
     SwitchOutput proximity_power_;
 
 
@@ -176,18 +197,28 @@ class DualExtruder : public ModuleBase {
     uint8_t active_extruder_;
     uint8_t target_extruder_;
     uint32_t nozzle_check_time_;
+    // 喷嘴检测状态：检测状态、空闲状态
     extruder_status_e extruder_check_status_;
     uint32_t extruder_switching_time_elapse_;
     bool need_to_report_extruder_info_;
+    // 挤出机状态
     bool extruder_status_;
+    // 控制喷嘴升降的电机的当前位置
     volatile float current_position_;
+    // 限位检测使能标志
     volatile bool end_stop_enable_;
+    // 电机转速控制缓冲区
     speed_node_t speed_ctrl_buffer_[20];
+    // 电机转速控制缓冲区的索引值
     volatile uint8_t speed_ctrl_index_;
+    // 当前电机运动步骤中已经累积的的脉冲计数值（已累积的步数）
     volatile uint32_t stepps_count_;
+    // 当前电机运动步骤中所需的脉冲计数总值（总步数）
     volatile uint32_t stepps_sum_;
+    // 当前输出的脉冲信号的引脚的高低电平
     volatile uint8_t step_pin_state_;
     volatile bool step_timer_init_flag_;
+    // 电机状态：转动中/非转动中
     volatile uint8_t motor_state_;
     volatile uint8_t homed_state_;
     volatile uint8_t hit_state_;
