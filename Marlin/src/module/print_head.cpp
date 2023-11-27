@@ -30,6 +30,8 @@
 void PrintHead::PeriphInit() {
 
 }
+
+// 初始化
 void PrintHead::Init() {
   // Fan
   fan_1_.Init(FAN_1_PIN);
@@ -38,12 +40,15 @@ void PrintHead::Init() {
   switch_cut_.Init(PB0);
   temperature_.InitCapture(PA6, ADC_TIM_4);
   temperature_.InitOutCtrl(PWM_TIM2, PWM_CH2, PA1);
+  // 注册模组
   uint32_t moduleType = registryInstance.module();
   if (MODULE_PRINT_V_SM1 == moduleType) {
     pinMode(PA2, OUTPUT);
     digitalWrite(PA2, HIGH);
   }
 }
+
+// FuncID 功能处理句柄
 void PrintHead::HandModule(uint16_t func_id, uint8_t * data, uint8_t data_len) {
   float val = 0.0;
   switch ((uint32_t)func_id) {
@@ -75,12 +80,15 @@ void PrintHead::HandModule(uint16_t func_id, uint8_t * data, uint8_t data_len) {
   }
 }
 
+// 急停处理
+// 关风扇、加热归零
 void PrintHead::EmergencyStop() {
   temperature_.ChangeTarget(0);
   fan_1_.ChangePwm(0, 0);
   fan_2_.ChangePwm(0, 0);
 }
 
+// 例行程序
 void PrintHead::Loop() {
   this->temperature_.Maintain();
   if ((temp_report_time_ + 500) < millis()) {

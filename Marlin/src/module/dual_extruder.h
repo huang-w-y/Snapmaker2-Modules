@@ -185,7 +185,7 @@ class DualExtruder : public ModuleBase {
     SwitchOutput z_motor_step_;
     // 使能信号引脚--启用/禁用步进电机旋转
     SwitchOutput z_motor_en_;
-    // 控制信号引脚--调整旋转速度/方向等
+    // 电流控制引脚
     SwitchOutput z_motor_cur_ctrl_;
     SwitchInput limit_switch_;
     // 接近开关电源
@@ -220,9 +220,12 @@ class DualExtruder : public ModuleBase {
     volatile bool step_timer_init_flag_;
     // 电机状态：转动中/非转动中
     volatile uint8_t motor_state_;
+    // 标记是否回 home
     volatile uint8_t homed_state_;
     volatile uint8_t hit_state_;
+    // 回 home 后抬升的位置
     float raise_for_home_pos_;
+    // 右喷嘴激活时往下走的距离
     float z_max_position_;
 
     uint32_t overtemp_debounce_[2];

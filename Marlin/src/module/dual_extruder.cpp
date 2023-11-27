@@ -115,7 +115,8 @@ void DualExtruder::Init() {
     param->y_hotend_offset = DEFAULT_HOTEND_OFFSET_Y;
     param->z_hotend_offset = DEFAULT_HOTEND_OFFSET_Z;
 
-    // 探针？补偿
+    // 探针补偿
+    // 探测传感器补偿值
     param->probe_sensor_compensation_0 = DEFAULT_SENSOR_COMPENSATION_L;
     param->probe_sensor_compensation_1 = DEFAULT_SENSOR_COMPENSATION_R;
 
@@ -230,6 +231,7 @@ void DualExtruder::HandModule(uint16_t func_id, uint8_t * data, uint8_t data_len
       ReportHotendOffset();
       break;
 
+    // 未使用
     // 设置 探针 补偿
     case FUNC_SET_PROBE_SENSOR_COMPENSATION:
       SetProbeSensorCompensation(data);
@@ -361,6 +363,7 @@ move_state_e DualExtruder::GoHome() {
   extruder_check_status_ = EXTRUDER_STATUS_IDLE;
   move_state_e move_state = MOVE_STATE_SUCCESS;
 
+  // 1- 先确保右喷嘴抬升到光电开关不触发的位置
   // if endstop triggered, leave current position
   // 若到达 endstop，则离开当前位置
   uint32_t i = 0;
@@ -380,6 +383,7 @@ move_state_e DualExtruder::GoHome() {
     goto EXIT;
   }
 
+  //2 - 快速往下走，直到右边光电开关触发
   end_stop_enable_ = true;
   DoBlockingMoveToZ(9, 9);
   MoveSync();
@@ -392,9 +396,11 @@ move_state_e DualExtruder::GoHome() {
   end_stop_enable_ = false;
 
   // bump
+  // - 抬升1mm
   DoBlockingMoveToZ(-1, 9);
   MoveSync();
 
+  // - 慢速往下走1.5mm直到右边光电开关触发
   end_stop_enable_ = true;
   DoBlockingMoveToZ(1.5, 1);
   MoveSync();
@@ -407,9 +413,11 @@ move_state_e DualExtruder::GoHome() {
   end_stop_enable_ = false;
 
   // go to the home position
+  // 回归用户配置的 home 位置
   DoBlockingMoveToZ(-raise_for_home_pos_, 6);
   MoveSync();
 
+  // - 设置此时的位置为home
   homed_state_ = 1;
   current_position_ = 0;
   extruder_check_status_ = EXTRUDER_STATUS_CHECK;
