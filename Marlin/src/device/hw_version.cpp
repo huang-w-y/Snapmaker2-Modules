@@ -52,26 +52,21 @@ uint32_t HWVersion::Init(uint32_t adc_pin, ADC_TIM_E adc_tim) {
 }
 
 void HWVersion::UpdateVersion() {
-  struct   VersionADCRange *range;
   uint32_t ver_adc;
-
   int i;
 
   if (version_ < HW_VER_MAX)
     return;
 
-  range   = ver_adc_range;
   ver_adc = ADC_Get(adc_index_);
 
   // get voltage from raw ADC with unit mV
   ver_adc = (uint32_t)(ver_adc * 3300 / 4096);
 
   for (i = 0; i < HW_VER_MAX; i++) {
-    if ((ver_adc >= range->lower) && (ver_adc <= range->upper)) {
+    if ((ver_adc >= ver_adc_range[i].lower) && (ver_adc <= ver_adc_range[i].upper)) {
       break;
     }
-
-    range++;
   }
 
   version_ = (uint8_t)i;
