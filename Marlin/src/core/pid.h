@@ -51,13 +51,18 @@ class Pid {
   uint32_t output(float actual);
   void SetPwmDutyLimitAndThreshold(uint8_t count, int32_t threshold);
   uint32_t getTarget();
+  // 比例系数
   float k_p_;
+  // 积分系数
   float k_i_;
+  // 微分系数
   float k_d_;
  private:
+  // K1_、K2_ 是用于计算微分的，因为 Δt 没有严格控制，所以就用加权滤波方式来做
   float k1_;
   float k2_;
 
+  // 目标温度
   float  target_ = 0;
 
 
@@ -67,17 +72,25 @@ class Pid {
 
   // above need initialization
 
+  // 当前误差值
   float err_ = 0;
+  // 上一次的误差值
   float pre_err_ = 0;
+  // 积分值
   float i_sum_ = 0;
 
+  // 微分值
   float d_term_ = 0;
+  // 最小积分值
   float i_sum_min_ = 0;
+  // 最大积分制
   float i_sum_max_ = 0;
 
   int32_t output_value_ = 0;
 
+  // 最大目标温度
   int32_t max_target_temperature_;
+  // 最小目标温度
   int32_t min_target_temperature_;
   int32_t max_temperature_;
   int32_t min_temperature_;
