@@ -227,6 +227,7 @@ typedef enum {
     FUNC_REPORT_RIGHT_LEVEL_MODE_INFO     ,  // 70
     FUNC_GET_LASER_WEAK_POWER             ,  // 71
     FUNC_SET_LASER_WEAK_POWER             ,  // 72
+    FUNC_REPORT_NOZZLE_TYPE_WITH_BASE = 78,  // 78
 } FUNC_ID;
 
 typedef enum {

@@ -72,6 +72,8 @@
 #define RIGHT_LEVEL_Z_DEFAULT_MAX_MOVE_POSITION       6.5
 #define RIGHT_LEVEL_ENABLE_VERIFY_MASK                0x5a
 
+#define NOZZLE_TYPE_IDENTIFY_ADC_THRESHOLD            (40)
+
 typedef enum {
   LEFT_MODEL_FAN,
   RIGHT_MODEL_FAN,
@@ -159,12 +161,14 @@ class DualExtruder : public ModuleBase {
     void FanCtrl(fan_e fan, uint8_t duty_cycle, uint16_t delay_sec_kill);
     void SetTemperature(uint8_t *data);
     void ReportTemprature();
+    void ReportTempratureVirtual();
     void ActiveExtruder(uint8_t extruder);
     void ExtruderStatusCheckCtrl(extruder_status_e status);
     void ExtruderStatusCheck();
     void ExtruderSwitching(uint8_t *data);
     void ExtruderSwitcingWithMotor(uint8_t *data, uint8_t data_len);
-    void ReportNozzleType();
+    void ReportNozzleSubType();
+    void ReportNozzleTypeWithBase();
     void ReportExtruderInfo();
     void SetHotendOffset (uint8_t *data);
     void ReportHotendOffset();
@@ -236,6 +240,15 @@ class DualExtruder : public ModuleBase {
     uint32_t overtemp_debounce_[2];
 
     HWVersion hw_ver_;
+    uint8_t nozzle_type_base[2];
+    uint8_t nozzle_identify_tmp_adc_index[2][2];
+    uint16_t nozzle_identify_adc_min[2][2];
+    uint16_t nozzle_identify_adc_max[2][2];
+    uint16_t nozzle_identify_adc_delta[2][2];
+    uint32_t nozzle_identify_start_time;
+    bool nozzle_identify_finish_flag;
+    bool nozzle_type_inited_flag;
+    
 };
 
 #endif

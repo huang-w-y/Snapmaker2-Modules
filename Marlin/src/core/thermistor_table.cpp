@@ -21,6 +21,7 @@
 #include "thermistor_table.h"
 
 #define TEMP_TABLE_NTC3950_LEN  (sizeof(temptable_ntc3950)/(sizeof(temptable_ntc3950[0])))
+#define TEMP_TABLE_NTC3950_PULLUP_4K7_LEN  (sizeof(temptable_ntc3950_pullup_4k7)/(sizeof(temptable_ntc3950_pullup_4k7[0])))
 #define TEMP_TABLE_NTC_WMT7029_LEN  (sizeof(temptable_ntc_wmt7029)/(sizeof(temptable_ntc_wmt7029[0])))
 #define TEMP_TABLE_PT100_LEN  (sizeof(temptable_pt100)/(sizeof(temptable_pt100[0])))
 #define OV(N) ((N) * (OVERSAMPLENR))
@@ -78,6 +79,62 @@ const int32_t temptable_ntc3950[][2] = {
   { OV(4062), -10 },
   { OV(4083), -27 },
   { OV(4085), -30 }
+};
+
+const int32_t temptable_ntc3950_pullup_4k7[][2] = {
+    { OV(45),350},
+    { OV(87),300},
+    { OV(101),290},
+    { OV(132),272},
+    { OV(164),258},
+    { OV(195),247},
+    { OV(231),237},
+    { OV(265),229},
+    { OV(303),221},
+    { OV(334),215},
+    { OV(369),209},
+    { OV(401),204},
+    { OV(438),199},
+    { OV(470),195},
+    { OV(515),190},
+    { OV(545),187},
+    { OV(588),183},
+    { OV(634),179},
+    { OV(672),176},
+    { OV(748),170},
+    { OV(818),165},
+    { OV(895),160},
+    { OV(979),155},
+    { OV(1071),150},
+    { OV(1194),144},
+    { OV(1307),139},
+    { OV(1455),133},
+    { OV(1587),128},
+    { OV(1723),123},
+    { OV(1887),117},
+    { OV(2059),111},
+    { OV(2235),105},
+    { OV(2384),100},
+    { OV(2534),95},
+    { OV(2683),90},
+    { OV(2828),85},
+    { OV(2993),79},
+    { OV(3171),72},
+    { OV(3243),69},
+    { OV(3334),65},
+    { OV(3496),57},
+    { OV(3533),55},
+    { OV(3602),51},
+    { OV(3694),45},
+    { OV(3773),39},
+    { OV(3887),28},
+    { OV(3926),23},
+    { OV(3965),17},
+    { OV(4005),9},
+    { OV(4037),0},
+    { OV(4060),-10},
+    { OV(4082),-27},
+    { OV(4084),-30}
 };
 
 const int32_t temptable_pt100[][2] = {
@@ -204,6 +261,10 @@ float32 TempTableCalcCurTemp(uint32_t u32Raw, thermistor_type_e thermistor) {
         case THERMISTOR_NTC3950:
             temptable = temptable_ntc3950;
             u32TableLen = TEMP_TABLE_NTC3950_LEN;
+            break;
+        case THERMISTOR_NTC3950_PULLUP_4K7:
+            temptable = temptable_ntc3950_pullup_4k7;
+            u32TableLen = TEMP_TABLE_NTC3950_PULLUP_4K7_LEN;
             break;
         case THERMISTOR_NTC_WMT7029:
             temptable = temptable_ntc_wmt7029;

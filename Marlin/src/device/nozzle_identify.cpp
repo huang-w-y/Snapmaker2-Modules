@@ -39,6 +39,10 @@ void NozzleIdentify::SetNozzleTypeCheckArray(thermistor_type_e type) {
       nozzle_type_array_ = ntc3950_nozzle_type_array;
       nozzle_type_base_count_ = NTC3950_NOZZLE_TYPE_BASE_COUNT;
       break;
+    case THERMISTOR_NTC3950_PULLUP_4K7:
+      nozzle_type_array_ = pullup_4k7_ntc3950_nozzle_type_array;
+      nozzle_type_base_count_ = NTC3950_PULLUP_4K7_NOZZLE_TYPE_BASE_COUNT;
+      break;
     case THERMISTOR_PT100:
       nozzle_type_array_ = pt100_nozzle_type_array;
       nozzle_type_base_count_ = PT100_NOZZLE_TYPE_BASE_COUNT;
@@ -48,39 +52,40 @@ void NozzleIdentify::SetNozzleTypeCheckArray(thermistor_type_e type) {
   }
 }
 
-nozzle_type_t NozzleIdentify::CheckNozzleType(uint16_t adc) {
-  uint32_t i;
+uint8_t NozzleIdentify::CheckNozzleSubType(uint16_t adc) {
+  uint8_t i;
 
-  for (i = 0; i < NOZZLE_TYPE_MAX; i++) {
-    if (adc >= nozzle_type_array_[i].min && adc <= nozzle_type_array_[i].max) {
-      return (nozzle_type_t)(i + nozzle_type_base_count_);
+  for (i = 0; i < NOZZLE_SUB_TYPE_MAX; i++) {
+    if (adc >= nozzle_type_array_[i].min && adc <= nozzle_type_array_[i].max && 0xffff != nozzle_type_array_[i].min) {
+      return i;
     }
   }
 
-  return NOZZLE_TYPE_MAX;
+  return NOZZLE_SUB_TYPE_MAX;
 }
 
-nozzle_type_t NozzleIdentify::GetNozzleType() {
-  return nozzle_type_;
+uint8_t NozzleIdentify::GetNozzleSubType() {
+  return nozzle_sub_type_;
 }
 
-void NozzleIdentify::ReportNozzle(uint8_t nozzle) {
-  uint8_t buf[8];
-  uint8_t index = 0;
+// void NozzleIdentify::ReportNozzle(uint8_t nozzle) {
+//   uint8_t buf[8];
+//   uint8_t index = 0;
 
-  uint16_t msgid = registryInstance.FuncId2MsgId(FUNC_REPORT_NOZZLE_TYPE);
-  if (msgid != INVALID_VALUE) {
-    buf[index++] = nozzle;
-    buf[index++] = (uint8_t)nozzle_type_;
-    canbus_g.PushSendStandardData(msgid, buf, index);
-  }
-}
+//   uint16_t msgid = registryInstance.FuncId2MsgId(FUNC_REPORT_NOZZLE_TYPE);
+//   if (msgid != INVALID_VALUE) {
+//     buf[index++] = nozzle;
+//     // TODO
+//     buf[index++] = (uint8_t)nozzle_sub_type_;
+//     canbus_g.PushSendStandardData(msgid, buf, index);
+//   }
+// }
 
 bool NozzleIdentify::CheckLoop() {
   uint16_t raw_adc_tmp;
   uint16_t raw_adc_diff = 0;
 
-  if (nozzle_type_ != NOZZLE_TYPE_MAX) {
+  if (nozzle_sub_type_ != NOZZLE_SUB_TYPE_MAX && INVALID_NOZZLE_TYPE_BASE_COUNT != nozzle_type_base_count_) {
     return true;
   }
 
@@ -106,12 +111,29 @@ bool NozzleIdentify::CheckLoop() {
     return false;
   }
 
-  nozzle_type_t nozzle_type = CheckNozzleType(raw_adc_value_);
-
-  if (nozzle_type_ != nozzle_type) {
-    nozzle_type_ = nozzle_type;
+  uint8_t sub_type = CheckNozzleSubType(raw_adc_value_);
+  if (nozzle_sub_type_ != sub_type) {
+    nozzle_sub_type_ = sub_type;
     return true;
   }
 
   return false;
 }
+
+
+bool NozzleIdentify::DirectlyConfirmTypeArrayBelong(const nozzle_adc_domain_t *array, uint16_t adc_val) {
+  uint8_t i = 0;
+
+  if (NULL == array) {
+    return false;
+  }
+
+  for (i = 0; i < NOZZLE_SUB_TYPE_MAX; i++) {
+    if (adc_val >= array[i].min && adc_val <= array[i].max && 0xffff != array[i].min ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+

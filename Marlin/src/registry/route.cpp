@@ -61,6 +61,7 @@ const uint16_t dual_extruder_func_list_[] = {
   FUNC_MODULE_GET_HW_VERSION,
   FUNC_SET_RIGHT_LEVEL_MODE,
   FUNC_REPORT_RIGHT_LEVEL_MODE_INFO,
+  FUNC_REPORT_NOZZLE_TYPE_WITH_BASE,
 };
 
 const uint16_t laser_func_list_[] = {

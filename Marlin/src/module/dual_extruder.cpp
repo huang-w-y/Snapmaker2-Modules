@@ -30,8 +30,8 @@
 #include "dual_extruder.h"
 #include "../device/soft_pwm.h"
 
-#define NTC3950_ADC_MIN 168
-#define NTC3950_ADC_MAX 417
+// #define NTC3950_ADC_MIN 168
+// #define NTC3950_ADC_MAX 417
 
 #define Z_MAX_POS                      9.0
 #define STEPPER_TIMER                  3
@@ -54,6 +54,19 @@
 #define DEFAULT_SENSOR_COMPENSATION_R (0.8)
 
 #define FAN_SPEED_MIN ((uint8_t)(255 * 0.6))
+
+#define NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A                (0)
+#define NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B                (1)
+#define NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT             (0)
+#define NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT            (1)
+#define NOZZLE_TYPE_IDENTIFY_PIN_LEFT_A                 (PA6)
+#define NOZZLE_TYPE_IDENTIFY_PIN_LEFT_B                 (PB1)
+#define NOZZLE_TYPE_IDENTIFY_PIN_RIGHT_A                (PA5)
+#define NOZZLE_TYPE_IDENTIFY_PIN_RIGHT_B                (PA3)
+
+#define NOZZLE_TYPE_IDENTIFY_STAGE_READY                (100)
+#define NOZZLE_TYPE_IDENTIFY_STAGE_FINISH               (5000 + NOZZLE_TYPE_IDENTIFY_STAGE_READY)
+#define NOZZLE_TYPE_IDENTIFY_STAGE_REPORT               (1000 + NOZZLE_TYPE_IDENTIFY_STAGE_FINISH)
 
 static DualExtruder * dual_extruder_p;
 
@@ -86,7 +99,7 @@ void DualExtruder::Init() {
   z_motor_step_.Init(LIFT_MOTOR_STEP_PIN, 0, OUTPUT);
   z_motor_en_.Init(LIFT_MOTOR_ENABLE_PIN, 0, OUTPUT);
 
-  uint8_t adc_index0_temp, adc_index0_identify, adc_index1_temp, adc_index1_identify;
+  // uint8_t adc_index0_temp, adc_index0_identify, adc_index1_temp, adc_index1_identify;
 
   if (param->parm_mark[0] != 0xaa || param->parm_mark[1] != 0x55) {
     param->temp_P = DEFAULT_PID_P;
@@ -140,29 +153,58 @@ void DualExtruder::Init() {
     z_max_position_ = RIGHT_LEVEL_Z_DEFAULT_CAIL_POSITION;
   }
 
-  adc_index0_temp = temperature_0_.InitCapture(TEMP_0_PIN, ADC_TIM_4);
-  temperature_0_.SetThermistorType(THERMISTOR_PT100);
-  temperature_0_.InitOutCtrl(PWM_TIM1, PWM_CH2, HEATER_0_PIN);
-  adc_index1_temp  = temperature_1_.InitCapture(TEMP_1_PIN, ADC_TIM_4);
-  temperature_1_.SetThermistorType(THERMISTOR_PT100);
-  temperature_1_.InitOutCtrl(PWM_TIM2, PWM_CH1, HEATER_1_PIN);
+  nozzle_type_inited_flag = false;
+  nozzle_identify_finish_flag = false;
+  nozzle_type_base[0] = INVALID_NOZZLE_TYPE_BASE_COUNT;
+  nozzle_type_base[1] = INVALID_NOZZLE_TYPE_BASE_COUNT;
 
-  adc_index0_identify = nozzle_identify_0_.Init(NOZZLE_ID_0_PIN, ADC_TIM_4);
-  adc_index1_identify = nozzle_identify_1_.Init(NOZZLE_ID_1_PIN, ADC_TIM_4);
+  nozzle_identify_adc_delta[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] = 0;
+  nozzle_identify_adc_delta[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] = 0;
+  nozzle_identify_adc_delta[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] = 0;
+  nozzle_identify_adc_delta[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] = 0;
+  nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] = 0xFFFF;
+  nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] = 0xFFFF;
+  nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] = 0xFFFF;
+  nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] = 0xFFFF;
+  nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] = 0;
+  nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] = 0;
+  nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] = 0;
+  nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] = 0;
+
+  // adc_index0_temp = temperature_0_.InitCapture(TEMP_0_PIN, ADC_TIM_4);
+  // temperature_0_.SetThermistorType(THERMISTOR_PT100);
+  // temperature_0_.InitOutCtrl(PWM_TIM1, PWM_CH2, HEATER_0_PIN);
+  // adc_index1_temp  = temperature_1_.InitCapture(TEMP_1_PIN, ADC_TIM_4);
+  // temperature_1_.SetThermistorType(THERMISTOR_PT100);
+  // temperature_1_.InitOutCtrl(PWM_TIM2, PWM_CH1, HEATER_1_PIN);
+
+  // adc_index0_identify = nozzle_identify_0_.Init(NOZZLE_ID_0_PIN, ADC_TIM_4);
+  // adc_index1_identify = nozzle_identify_1_.Init(NOZZLE_ID_1_PIN, ADC_TIM_4);
+
+  nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] = 
+        HAL_adc_init(NOZZLE_TYPE_IDENTIFY_PIN_LEFT_A, ADC_TIM_4, ADC_PERIOD_DEFAULT);
+  nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] = 
+        HAL_adc_init(NOZZLE_TYPE_IDENTIFY_PIN_LEFT_B, ADC_TIM_4, ADC_PERIOD_DEFAULT);
+  nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] = 
+        HAL_adc_init(NOZZLE_TYPE_IDENTIFY_PIN_RIGHT_A, ADC_TIM_4, ADC_PERIOD_DEFAULT);
+  nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] = 
+        HAL_adc_init(NOZZLE_TYPE_IDENTIFY_PIN_RIGHT_B, ADC_TIM_4, ADC_PERIOD_DEFAULT);
 
   hw_ver_.Init(HW_VERSION_ADC_PIN, ADC_TIM_4);
 
   hal_start_adc();
 
-  temperature_0_.SetAdcIndex(adc_index0_temp);
-  temperature_0_.SetThermistorType(THERMISTOR_PT100);
-  nozzle_identify_0_.SetAdcIndex(adc_index0_identify);
-  nozzle_identify_0_.SetNozzleTypeCheckArray(THERMISTOR_PT100);
+  // temperature_0_.SetAdcIndex(adc_index0_temp);
+  // temperature_0_.SetThermistorType(THERMISTOR_PT100);
+  // nozzle_identify_0_.SetAdcIndex(adc_index0_identify);
+  // nozzle_identify_0_.SetNozzleTypeCheckArray(THERMISTOR_PT100);
 
-  temperature_1_.SetAdcIndex(adc_index1_temp);
-  temperature_1_.SetThermistorType(THERMISTOR_PT100);
-  nozzle_identify_1_.SetAdcIndex(adc_index1_identify);
-  nozzle_identify_1_.SetNozzleTypeCheckArray(THERMISTOR_PT100);
+  // temperature_1_.SetAdcIndex(adc_index1_temp);
+  // temperature_1_.SetThermistorType(THERMISTOR_PT100);
+  // nozzle_identify_1_.SetAdcIndex(adc_index1_identify);
+  // nozzle_identify_1_.SetNozzleTypeCheckArray(THERMISTOR_PT100);
+
+  nozzle_identify_start_time = millis();
 
   temp_report_time_ = millis() + TEMP_REPORT_INTERVAL;
   overtemp_debounce_[0] = millis() + OVER_TEMP_DEBOUNCE;
@@ -191,18 +233,30 @@ void DualExtruder::HandModule(uint16_t func_id, uint8_t * data, uint8_t data_len
       break;
 
     case FUNC_SET_TEMPEARTURE:
+      if (false == nozzle_identify_finish_flag) {
+        break;
+      }
       SetTemperature(data);
       break;
 
     case FUNC_REPORT_TEMPEARTURE:
+      if (false == nozzle_identify_finish_flag) {
+        break;
+      }
       ReportTemprature();
       break;
 
     case FUNC_REPORT_TEMP_PID:
+      if (false == nozzle_identify_finish_flag) {
+        break;
+      }
       temperature_0_.ReportPid();
       break;
 
     case FUNC_SET_PID:
+      if (false == nozzle_identify_finish_flag) {
+        break;
+      }
       val = (float)(((data[1]) << 24) | ((data[2]) << 16) | ((data[3]) << 8 | (data[4]))) / 1000;
       temperature_0_.SetPID(data[0], val);
       break;
@@ -212,7 +266,10 @@ void DualExtruder::HandModule(uint16_t func_id, uint8_t * data, uint8_t data_len
       break;
 
     case FUNC_REPORT_NOZZLE_TYPE:
-      ReportNozzleType();
+      if (false == nozzle_identify_finish_flag) {
+        break;
+      }
+      ReportNozzleSubType();
       break;
 
     case FUNC_REPORT_EXTRUDER_INFO:
@@ -264,6 +321,13 @@ void DualExtruder::HandModule(uint16_t func_id, uint8_t * data, uint8_t data_len
 
     case FUNC_REPORT_RIGHT_LEVEL_MODE_INFO:
       ReportRightLevelModeInfo();
+      break;
+
+    case FUNC_REPORT_NOZZLE_TYPE_WITH_BASE:
+      if (false == nozzle_identify_finish_flag) {
+        break;
+      }
+      ReportNozzleTypeWithBase();
       break;
 
     default:
@@ -742,7 +806,7 @@ void DualExtruder::ReportTemprature() {
     uint8_t buf[CAN_DATA_FRAME_LENGTH];
     uint8_t index = 0;
 
-    if (nozzle_identify_0_.GetNozzleType() == NOZZLE_TYPE_MAX) {
+    if (nozzle_identify_0_.GetNozzleSubType() == NOZZLE_SUB_TYPE_MAX) {
       temp_error |= (1<<ERR_INVALID_NOZZLE_BIT_MASK);
     }
 
@@ -764,7 +828,7 @@ void DualExtruder::ReportTemprature() {
     buf[index++] = temp_error;
 
     temp_error = 0;
-    if (nozzle_identify_1_.GetNozzleType() == NOZZLE_TYPE_MAX) {
+    if (nozzle_identify_1_.GetNozzleSubType() == NOZZLE_SUB_TYPE_MAX) {
       temp_error |= (1<<ERR_INVALID_NOZZLE_BIT_MASK);
     }
 
@@ -784,6 +848,16 @@ void DualExtruder::ReportTemprature() {
     buf[index++] = temp;
     buf[index++] = temp_error;
     buf[index++] = temp_error;
+
+    canbus_g.PushSendStandardData(msgid, buf, index);
+  }
+}
+
+void DualExtruder::ReportTempratureVirtual() {
+  int16_t msgid = registryInstance.FuncId2MsgId(FUNC_REPORT_TEMPEARTURE);
+  if (msgid != INVALID_VALUE) {
+    uint8_t buf[CAN_DATA_FRAME_LENGTH] = {0,0,0,0,0,0,0,0};
+    uint8_t index = 8;
 
     canbus_g.PushSendStandardData(msgid, buf, index);
   }
@@ -884,13 +958,24 @@ void DualExtruder::ExtruderSwitcingWithMotor(uint8_t *data, uint8_t data_len) {
   }
 }
 
-void DualExtruder::ReportNozzleType() {
+void DualExtruder::ReportNozzleSubType() {
   uint8_t buf[CAN_DATA_FRAME_LENGTH];
   uint8_t index = 0;
   uint16_t msgid = registryInstance.FuncId2MsgId(FUNC_REPORT_NOZZLE_TYPE);
   if (msgid != INVALID_VALUE) {
-    buf[index++] = (uint8_t)nozzle_identify_0_.GetNozzleType();
-    buf[index++] = (uint8_t)nozzle_identify_1_.GetNozzleType();
+    buf[index++] = (uint8_t)nozzle_identify_0_.GetNozzleSubType();
+    buf[index++] = (uint8_t)nozzle_identify_1_.GetNozzleSubType();
+    canbus_g.PushSendStandardData(msgid, buf, index);
+  }
+}
+
+void DualExtruder::ReportNozzleTypeWithBase() {
+  uint8_t buf[CAN_DATA_FRAME_LENGTH];
+  uint8_t index = 0;
+  uint16_t msgid = registryInstance.FuncId2MsgId(FUNC_REPORT_NOZZLE_TYPE_WITH_BASE);
+  if (msgid != INVALID_VALUE) {
+    buf[index++] = nozzle_identify_0_.GetNozzleTypeBase() + nozzle_identify_0_.GetNozzleSubType();
+    buf[index++] = nozzle_identify_1_.GetNozzleTypeBase() + nozzle_identify_1_.GetNozzleSubType();
     canbus_g.PushSendStandardData(msgid, buf, index);
   }
 }
@@ -1155,19 +1240,199 @@ void DualExtruder::EmergencyStop() {
 }
 
 void DualExtruder::Loop() {
+  if (millis() - nozzle_identify_start_time < NOZZLE_TYPE_IDENTIFY_STAGE_READY) {
+    /* wait... */
+  }
+  else if (millis() - nozzle_identify_start_time < NOZZLE_TYPE_IDENTIFY_STAGE_FINISH) {
+    if (hal_adc_status()) {
+      uint16_t adc_tmp = 0;
+
+      adc_tmp = ADC_Get(nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A]);
+      if (adc_tmp > nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A]) {
+        nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] = adc_tmp;
+      }
+      else {
+        if (adc_tmp < nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A]) {
+          nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] = adc_tmp;
+        }
+      }
+
+      adc_tmp = ADC_Get(nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B]);
+      if (adc_tmp > nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B]) {
+        nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] = adc_tmp;
+      }
+      else {
+        if (adc_tmp < nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B]) {
+          nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] = adc_tmp;
+        }
+      }
+    
+      adc_tmp = ADC_Get(nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A]);
+      if (adc_tmp > nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A]) {
+        nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] = adc_tmp;
+      }
+      else {
+        if (adc_tmp < nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A]) {
+          nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] = adc_tmp;
+        }
+      }
+
+      adc_tmp = ADC_Get(nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B]);
+      if (adc_tmp > nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B]) {
+        nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] = adc_tmp;
+      }
+      else {
+        if (adc_tmp < nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B]) {
+          nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] = adc_tmp;
+        }
+      }
+    }
+  }
+  else if (millis() - nozzle_identify_start_time < NOZZLE_TYPE_IDENTIFY_STAGE_REPORT) {
+    if (true == nozzle_type_inited_flag) {
+      if (hal_adc_status()) {
+          temperature_0_.TemperatureOut();
+          temperature_1_.TemperatureOut();
+          nozzle_identify_0_.CheckLoop();
+          nozzle_identify_1_.CheckLoop();
+      }
+    }
+    else {
+      nozzle_identify_adc_delta[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] = 
+        nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] - 
+        nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A];
+
+      nozzle_identify_adc_delta[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] = 
+        nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] - 
+        nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B];
+
+      nozzle_identify_adc_delta[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] = 
+        nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] - 
+        nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A];
+
+      nozzle_identify_adc_delta[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] = 
+        nozzle_identify_adc_max[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] - 
+        nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B];
+
+      if (true == NozzleIdentify::DirectlyConfirmTypeArrayBelong(pt100_nozzle_type_array, 
+            nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A])) {
+        if (true == NozzleIdentify::DirectlyConfirmTypeArrayBelong(pullup_4k7_ntc3950_nozzle_type_array, 
+            nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B])) {
+          if (nozzle_identify_adc_delta[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] > NOZZLE_TYPE_IDENTIFY_ADC_THRESHOLD) {
+            if (nozzle_identify_adc_delta[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] > NOZZLE_TYPE_IDENTIFY_ADC_THRESHOLD) {
+              nozzle_type_base[0] = INVALID_NOZZLE_TYPE_BASE_COUNT;
+            }
+            else {
+              nozzle_type_base[0] = NTC3950_PULLUP_4K7_NOZZLE_TYPE_BASE_COUNT;
+            }
+          }
+          else {
+            nozzle_type_base[0] = PT100_NOZZLE_TYPE_BASE_COUNT;
+          }
+        }
+        else {
+          nozzle_type_base[0] = PT100_NOZZLE_TYPE_BASE_COUNT;
+        }
+      }
+      else {
+        if (true == NozzleIdentify::DirectlyConfirmTypeArrayBelong(pullup_4k7_ntc3950_nozzle_type_array, 
+            nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B])) {
+          nozzle_type_base[0] = NTC3950_PULLUP_4K7_NOZZLE_TYPE_BASE_COUNT;
+        }
+        else {
+          nozzle_type_base[0] = INVALID_NOZZLE_TYPE_BASE_COUNT;
+        }
+      }
+
+      if (true == NozzleIdentify::DirectlyConfirmTypeArrayBelong(pt100_nozzle_type_array, 
+            nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A])) {
+        if (true == NozzleIdentify::DirectlyConfirmTypeArrayBelong(pullup_4k7_ntc3950_nozzle_type_array, 
+            nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B])) {
+          if (nozzle_identify_adc_delta[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A] > NOZZLE_TYPE_IDENTIFY_ADC_THRESHOLD) {
+            if (nozzle_identify_adc_delta[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B] > NOZZLE_TYPE_IDENTIFY_ADC_THRESHOLD) {
+              nozzle_type_base[1] = INVALID_NOZZLE_TYPE_BASE_COUNT;
+            }
+            else {
+              nozzle_type_base[1] = NTC3950_PULLUP_4K7_NOZZLE_TYPE_BASE_COUNT;
+            }
+          }
+          else {
+            nozzle_type_base[1] = PT100_NOZZLE_TYPE_BASE_COUNT;
+          }
+        }
+        else {
+          nozzle_type_base[1] = PT100_NOZZLE_TYPE_BASE_COUNT;
+        }
+      }
+      else {
+        if (true == NozzleIdentify::DirectlyConfirmTypeArrayBelong(pullup_4k7_ntc3950_nozzle_type_array, 
+            nozzle_identify_adc_min[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B])) {
+          nozzle_type_base[1] = NTC3950_PULLUP_4K7_NOZZLE_TYPE_BASE_COUNT;
+        }
+        else {
+          nozzle_type_base[1] = INVALID_NOZZLE_TYPE_BASE_COUNT;
+        }
+      }
+
+      if (NTC3950_PULLUP_4K7_NOZZLE_TYPE_BASE_COUNT == nozzle_type_base[0]) {
+        nozzle_identify_0_.SetAdcIndex(nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B]);
+        nozzle_identify_0_.SetNozzleTypeCheckArray(THERMISTOR_NTC3950_PULLUP_4K7);
+        temperature_0_.SetAdcIndex(nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A]);
+        temperature_0_.SetThermistorType(THERMISTOR_NTC3950_PULLUP_4K7);
+      }
+      else {
+        nozzle_identify_0_.SetAdcIndex(nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A]);
+        nozzle_identify_0_.SetNozzleTypeCheckArray(THERMISTOR_PT100);
+        temperature_0_.SetAdcIndex(nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_LEFT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B]);
+        temperature_0_.SetThermistorType(THERMISTOR_PT100);
+      }
+
+      if (NTC3950_PULLUP_4K7_NOZZLE_TYPE_BASE_COUNT == nozzle_type_base[1]) {
+        nozzle_identify_1_.SetAdcIndex(nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B]);
+        nozzle_identify_1_.SetNozzleTypeCheckArray(THERMISTOR_NTC3950_PULLUP_4K7);
+        temperature_1_.SetAdcIndex(nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A]);
+        temperature_1_.SetThermistorType(THERMISTOR_NTC3950_PULLUP_4K7);
+      }
+      else {
+        nozzle_identify_1_.SetAdcIndex(nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_A]);
+        nozzle_identify_1_.SetNozzleTypeCheckArray(THERMISTOR_PT100);
+        temperature_1_.SetAdcIndex(nozzle_identify_tmp_adc_index[NOZZLE_TYPE_IDENTIFY_PIN_INDEX_RIGHT][NOZZLE_TYPE_IDENTIFY_PIN_INDEX_B]);
+        temperature_1_.SetThermistorType(THERMISTOR_PT100);
+      }
+
+      temperature_0_.InitOutCtrl(PWM_TIM1, PWM_CH2, HEATER_0_PIN);
+      temperature_1_.InitOutCtrl(PWM_TIM2, PWM_CH1, HEATER_1_PIN);
+
+      nozzle_type_inited_flag = true;
+    }
+  }
+  else {
+    if (false == nozzle_identify_finish_flag) {
+      nozzle_identify_finish_flag = true;
+      temperature_0_.ReportPid();
+      ReportNozzleSubType();
+      ReportTemprature();
+    }
+  }
+
   if (hal_adc_status()) {
-    temperature_0_.TemperatureOut();
-    temperature_1_.TemperatureOut();
-
-    nozzle_identify_0_.CheckLoop();
-    nozzle_identify_1_.CheckLoop();
-
+    if (nozzle_identify_finish_flag) {
+      temperature_0_.TemperatureOut();
+      temperature_1_.TemperatureOut();
+      nozzle_identify_0_.CheckLoop();
+      nozzle_identify_1_.CheckLoop();
+    }
     hw_ver_.UpdateVersion();
   }
 
   if (ELAPSED(millis(), temp_report_time_)) {
     temp_report_time_ = millis() + TEMP_REPORT_INTERVAL;
-    ReportTemprature();
+    if (nozzle_identify_finish_flag) {
+      ReportTemprature();
+    }
+    else {
+      ReportTempratureVirtual();
+    }
   }
 
   if (out_of_material_detect_0_.CheckStatusLoop() || out_of_material_detect_1_.CheckStatusLoop()) {

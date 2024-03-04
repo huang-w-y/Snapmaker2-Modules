@@ -26,29 +26,29 @@
 #include "../HAL/hal_adc.h"
 #include "src/core/thermistor_table.h"
 
-#define PT100_NOZZLE_TYPE_BASE_COUNT    0
-#define NTC3950_NOZZLE_TYPE_BASE_COUNT  20
+#define PT100_NOZZLE_TYPE_BASE_COUNT                (0)
+#define NTC3950_NOZZLE_TYPE_BASE_COUNT              (20)
+#define NTC3950_PULLUP_4K7_NOZZLE_TYPE_BASE_COUNT   (40)
+#define INVALID_NOZZLE_TYPE_BASE_COUNT              (245)
 
-typedef enum {
-  NOZZLE_TYPE_0,
-  NOZZLE_TYPE_1,
-  NOZZLE_TYPE_2,
-  NOZZLE_TYPE_3,
-  NOZZLE_TYPE_4,
-  NOZZLE_TYPE_5,
-  NOZZLE_TYPE_6,
-  NOZZLE_TYPE_7,
-  NOZZLE_TYPE_8,
-  NOZZLE_TYPE_9,
-  NOZZLE_TYPE_MAX,
-} nozzle_type_t;
+#define NOZZLE_SUB_TYPE_0                           (0)
+#define NOZZLE_SUB_TYPE_1                           (1)
+#define NOZZLE_SUB_TYPE_2                           (2)
+#define NOZZLE_SUB_TYPE_3                           (3)
+#define NOZZLE_SUB_TYPE_4                           (4)
+#define NOZZLE_SUB_TYPE_5                           (5)
+#define NOZZLE_SUB_TYPE_6                           (6)
+#define NOZZLE_SUB_TYPE_7                           (7)
+#define NOZZLE_SUB_TYPE_8                           (8)
+#define NOZZLE_SUB_TYPE_9                           (9)
+#define NOZZLE_SUB_TYPE_MAX                         (10)
 
 typedef struct {
   uint16_t min;
   uint16_t max;
 }nozzle_adc_domain_t;
 
-const nozzle_adc_domain_t pt100_nozzle_type_array[NOZZLE_TYPE_MAX] = {{.min = 143,  .max = 392},  \
+const nozzle_adc_domain_t pt100_nozzle_type_array[NOZZLE_SUB_TYPE_MAX] = {{.min = 143,  .max = 392},  \
                                                                        {.min = 483,  .max = 732},  \
                                                                        {.min = 866,  .max = 1114}, \
                                                                        {.min = 1259, .max = 1508}, \
@@ -59,7 +59,7 @@ const nozzle_adc_domain_t pt100_nozzle_type_array[NOZZLE_TYPE_MAX] = {{.min = 14
                                                                        {.min = 2993, .max = 3242}, \
                                                                        {.min = 3598, .max = 3847}};
 
-const nozzle_adc_domain_t ntc3950_nozzle_type_array[NOZZLE_TYPE_MAX] = {{.min = 235,    .max = 360},    \
+const nozzle_adc_domain_t ntc3950_nozzle_type_array[NOZZLE_SUB_TYPE_MAX] = {{.min = 235,    .max = 360},    \
                                                                          {.min = 96,     .max = 159},    \
                                                                          {.min = 0xffff, .max = 0xffff}, \
                                                                          {.min = 0xffff, .max = 0xffff}, \
@@ -70,26 +70,39 @@ const nozzle_adc_domain_t ntc3950_nozzle_type_array[NOZZLE_TYPE_MAX] = {{.min = 
                                                                          {.min = 0xffff, .max = 0xffff}, \
                                                                          {.min = 0xffff, .max = 0xffff}};
 
+const nozzle_adc_domain_t pullup_4k7_ntc3950_nozzle_type_array[NOZZLE_SUB_TYPE_MAX] = {{.min = 505, .max = 754}, \
+                                                                          {.min = 1108,   .max = 1357},    \
+                                                                          {.min = 1745,   .max = 1995},    \
+                                                                          {.min = 2277,   .max = 2526}, \
+                                                                          {.min = 2991,   .max = 3241}, \
+                                                                          {.min = 0xffff, .max = 0xffff}, \
+                                                                          {.min = 0xffff, .max = 0xffff}, \
+                                                                          {.min = 0xffff, .max = 0xffff}, \
+                                                                          {.min = 0xffff, .max = 0xffff}, \
+                                                                          {.min = 0xffff, .max = 0xffff}};
+
 class NozzleIdentify {
  public:
   NozzleIdentify() {
-    nozzle_type_base_count_ = NOZZLE_TYPE_MAX;
-    nozzle_type_ = NOZZLE_TYPE_MAX;
+    nozzle_type_base_count_ = INVALID_NOZZLE_TYPE_BASE_COUNT;
+    nozzle_sub_type_ = NOZZLE_SUB_TYPE_MAX;
     adc_filter_count_ = 0;
     raw_adc_value_ = 0xffff;
   }
   uint8_t Init(uint8_t adc_pin, ADC_TIM_E adc_tim);
   void SetAdcIndex(uint8_t index) { adc_index_ = index; }
   void SetNozzleTypeCheckArray(thermistor_type_e type);
-  nozzle_type_t CheckNozzleType(uint16_t adc);
-  nozzle_type_t GetNozzleType();
-  void ReportNozzle(uint8_t nozzle);
+  uint8_t CheckNozzleSubType(uint16_t adc);
+  uint8_t GetNozzleSubType();
+  uint8_t GetNozzleTypeBase() {return nozzle_type_base_count_;}
+  // void ReportNozzle(uint8_t nozzle);
   bool CheckLoop();
+  static bool DirectlyConfirmTypeArrayBelong(const nozzle_adc_domain_t *array, uint16_t adc_val);
 
  private:
   uint8_t adc_index_;
   uint16_t raw_adc_value_;
-  nozzle_type_t nozzle_type_;
+  uint8_t nozzle_sub_type_;
   uint8_t adc_filter_count_;
   uint8_t nozzle_type_base_count_;
   const nozzle_adc_domain_t *nozzle_type_array_;
